@@ -248,16 +248,56 @@ echo "You can now SSH to this server using: ssh brian@{ip_address}"
         return None
 
 def try_direct_ssh_setup(ip_address, hostname):
-    """Try to set up SSH access directly from Lockr without intermediate servers"""
+    """Execute Ansible playbook to set up SSH access via central server"""
     try:
-        print(f"Attempting direct SSH setup for {ip_address}")
+        print(f"Executing Ansible playbook for SSH setup on {ip_address}")
         
-        # For now, we'll just mark it as requiring manual setup
-        # In the future, this could try password authentication or other methods
+        # Path to the setup script
+        setup_script = os.path.join(os.getcwd(), "setup_server_ssh.sh")
         
+        if not os.path.exists(setup_script):
+            return {
+                "success": False,
+                "error": f"Setup script not found: {setup_script}",
+                "manual_steps": [
+                    f"1. SSH to {ip_address} using existing credentials",
+                    f"2. Add your SSH public key to ~/.ssh/authorized_keys",
+                    f"3. Test SSH key authentication",
+                    f"4. Use 'Test Connection' in Lockr to verify setup"
+                ]
+            }
+        
+        # Execute the Ansible playbook
+        cmd = f"{setup_script} {ip_address} {hostname}"
+        print(f"Executing: {cmd}")
+        
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
+        
+        if result.returncode == 0:
+            return {
+                "success": True,
+                "message": f"SSH setup completed successfully for {hostname} ({ip_address})",
+                "output": result.stdout,
+                "method": "ansible_playbook"
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Ansible playbook failed with exit code {result.returncode}",
+                "output": result.stdout,
+                "error_output": result.stderr,
+                "manual_steps": [
+                    f"1. SSH to {ip_address} using existing credentials",
+                    f"2. Add your SSH public key to ~/.ssh/authorized_keys",
+                    f"3. Test SSH key authentication",
+                    f"4. Use 'Test Connection' in Lockr to verify setup"
+                ]
+            }
+        
+    except subprocess.TimeoutExpired:
         return {
             "success": False,
-            "error": "Direct SSH setup not yet implemented. Please set up SSH access manually.",
+            "error": "Ansible playbook execution timed out (5 minutes)",
             "manual_steps": [
                 f"1. SSH to {ip_address} using existing credentials",
                 f"2. Add your SSH public key to ~/.ssh/authorized_keys",
@@ -265,11 +305,16 @@ def try_direct_ssh_setup(ip_address, hostname):
                 f"4. Use 'Test Connection' in Lockr to verify setup"
             ]
         }
-        
     except Exception as e:
         return {
             "success": False,
-            "error": f"Direct SSH setup failed: {str(e)}"
+            "error": f"Ansible playbook execution failed: {str(e)}",
+            "manual_steps": [
+                f"1. SSH to {ip_address} using existing credentials",
+                f"2. Add your SSH public key to ~/.ssh/authorized_keys",
+                f"3. Test SSH key authentication",
+                f"4. Use 'Test Connection' in Lockr to verify setup"
+            ]
         }
 
 def test_ssh_connection(host, username, key_path, timeout=10):

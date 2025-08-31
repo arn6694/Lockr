@@ -1,0 +1,45 @@
+---
+- name: Setup SSH Access for New Servers
+  hosts: central_server
+  become: false
+  gather_facts: false
+  
+  vars:
+    target_server: "{{ target_server_ip | default('10.10.10.5') }}"
+    target_hostname: "{{ target_hostname | default('checkmk') }}"
+    admin_user: "brian"
+    ssh_key_path: "/home/brian/.ssh/id_ed25519.pub"
+  
+  tasks:
+    - name: Check if brian-install.sh exists on central server
+      stat:
+        path: "/home/brian/brian-install.sh"
+      register: script_check
+      
+    - name: Fail if brian-install.sh not found
+      fail:
+        msg: "brian-install.sh not found on central server. Please ensure the script exists at /home/brian/brian-install.sh"
+      when: not script_check.stat.exists
+      
+    - name: Display target server information
+      debug:
+        msg: "Setting up SSH access for {{ target_hostname }} ({{ target_server }})"
+        
+    - name: Execute brian-install.sh on central server
+      command: "sudo /home/brian/brian-install.sh {{ target_server }} {{ target_hostname }}"
+      register: setup_result
+      ignore_errors: true
+      
+    - name: Display setup result
+      debug:
+        msg: "Setup completed with exit code: {{ setup_result.rc }}"
+        
+    - name: Check if setup was successful
+      fail:
+        msg: "SSH setup failed for {{ target_hostname }}. Check the output above for errors."
+      when: setup_result.rc != 0
+      
+    - name: Success message
+      debug:
+        msg: "SSH access successfully configured for {{ target_hostname }} ({{ target_server }})"
+      when: setup_result.rc == 0
