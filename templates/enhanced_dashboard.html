@@ -2928,10 +2928,12 @@
                             <strong>SSH setup failed:</strong><br>
                             ${data.error}
                         </div>
-                        <div class="alert alert-warning">
-                            <strong>Details:</strong><br>
-                            ${data.details ? JSON.stringify(data.details, null, 2) : 'No additional details available'}
+                        ${data.manual_steps ? `
+                        <div class="alert alert-info">
+                            <strong>Manual Setup Steps:</strong><br>
+                            ${data.manual_steps.map(step => `• ${step}`).join('<br>')}
                         </div>
+                        ` : ''}
                     `);
                 }
             })

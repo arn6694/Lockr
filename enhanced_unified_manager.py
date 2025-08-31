@@ -139,36 +139,30 @@ def test_connectivity_socket(host, timeout=5):
         return {"ping": False, "error": f"Socket test error: {str(e)}"}
 
 def try_alternative_server_setup(ip_address, hostname):
-    """Automatically execute brian-install.sh on central server to set up new server"""
+    """Try to set up SSH access directly from Lockr using alternative methods"""
     try:
-        print(f"Executing brian-install.sh on central server for {ip_address}")
+        print(f"Attempting direct SSH setup for {ip_address}")
         
-        # Execute the setup script on a working server that has SSH access
-        # This server should have access to all other servers and your SSH keys
-        central_server_ip = "10.10.10.42"  # Using pi5 which has SSH access
+        # Try to connect using password authentication or other methods
+        # This is a fallback for servers that don't have SSH keys yet
+        setup_result = try_direct_ssh_setup(ip_address, hostname)
         
-        # Generate the setup script content
-        setup_script = generate_brian_setup_script(ip_address)
-        
-        # Execute the script on the central server
-        script_result = execute_setup_on_central_server(central_server_ip, ip_address, hostname, setup_script)
-        
-        if script_result['success']:
+        if setup_result['success']:
             return {
                 "success": True,
                 "message": f"Server {hostname} ({ip_address}) added and SSH setup completed automatically",
                 "setup_required": False,
-                "setup_method": "automatic",
-                "details": f"Setup script executed on central server {central_server_ip}"
+                "setup_method": "direct",
+                "details": "SSH access configured directly from Lockr"
             }
         else:
             return {
                 "success": True,
-                "message": f"Server {hostname} ({ip_address}) added but SSH setup failed",
+                "message": f"Server {hostname} ({ip_address}) added but requires manual SSH setup",
                 "setup_required": True,
-                "setup_method": "failed",
-                "error": script_result['error'],
-                "details": f"Setup script failed on central server {central_server_ip}"
+                "setup_method": "manual",
+                "error": setup_result['error'],
+                "details": "Please set up SSH access manually and then use 'Test Connection' to verify"
             }
         
     except Exception as e:
@@ -253,88 +247,29 @@ echo "You can now SSH to this server using: ssh brian@{ip_address}"
         print(f"Failed to generate setup script: {e}")
         return None
 
-def execute_setup_on_central_server(central_server_ip, target_server_ip, hostname, script_content):
-    """Execute the setup script on the central server to configure the target server"""
+def try_direct_ssh_setup(ip_address, hostname):
+    """Try to set up SSH access directly from Lockr without intermediate servers"""
     try:
-        print(f"Executing setup on central server {central_server_ip} for target {target_server_ip}")
+        print(f"Attempting direct SSH setup for {ip_address}")
         
-        # Create SSH client to connect to central server
-        ssh = paramiko.SSHClient()
-        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        # For now, we'll just mark it as requiring manual setup
+        # In the future, this could try password authentication or other methods
         
-        # Load private key for central server access
-        if not os.path.exists(SSH_KEY_PATH):
-            return {
-                "success": False,
-                "error": f"SSH key not found: {SSH_KEY_PATH}"
-            }
-        
-        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
-        
-        # Connect to central server
-        ssh.connect(central_server_ip, username=SSH_USER, pkey=private_key, timeout=15)
-        
-        # Create the setup script on the central server
-        script_file = f"/tmp/setup_{hostname}_{int(time.time())}.sh"
-        
-        # Upload script content
-        stdin, stdout, stderr = ssh.exec_command(f"cat > {script_file} << 'EOF'\n{script_content}\nEOF", timeout=30)
-        exit_status = stdout.channel.recv_exit_status()
-        
-        if exit_status != 0:
-            ssh.close()
-            return {
-                "success": False,
-                "error": f"Failed to create script on central server: {stderr.read().decode()}"
-            }
-        
-        # Make script executable
-        stdin, stdout, stderr = ssh.exec_command(f"chmod +x {script_file}", timeout=10)
-        exit_status = stdout.channel.recv_exit_status()
-        
-        if exit_status != 0:
-            ssh.close()
-            return {
-                "success": False,
-                "error": f"Failed to make script executable: {stderr.read().decode()}"
-            }
-        
-        # Execute the setup script on the central server
-        # This script will handle the SSH setup for the target server
-        setup_command = f"sudo {script_file}"
-        stdin, stdout, stderr = ssh.exec_command(setup_command, timeout=120)
-        exit_status = stdout.channel.recv_exit_status()
-        
-        # Get output
-        stdout_content = stdout.read().decode()
-        stderr_content = stderr.read().decode()
-        
-        # Clean up script file
-        ssh.exec_command(f"rm -f {script_file}", timeout=10)
-        
-        ssh.close()
-        
-        if exit_status == 0:
-            return {
-                "success": True,
-                "message": f"Setup completed successfully on {target_server_ip}",
-                "output": stdout_content,
-                "central_server": central_server_ip
-            }
-        else:
-            return {
-                "success": False,
-                "error": f"Setup failed on {target_server_ip}",
-                "output": stdout_content,
-                "error_output": stderr_content,
-                "exit_code": exit_status,
-                "central_server": central_server_ip
-            }
+        return {
+            "success": False,
+            "error": "Direct SSH setup not yet implemented. Please set up SSH access manually.",
+            "manual_steps": [
+                f"1. SSH to {ip_address} using existing credentials",
+                f"2. Add your SSH public key to ~/.ssh/authorized_keys",
+                f"3. Test SSH key authentication",
+                f"4. Use 'Test Connection' in Lockr to verify setup"
+            ]
+        }
         
     except Exception as e:
         return {
             "success": False,
-            "error": f"Failed to execute setup on central server: {str(e)}"
+            "error": f"Direct SSH setup failed: {str(e)}"
         }
 
 def test_ssh_connection(host, username, key_path, timeout=10):
@@ -1210,11 +1145,10 @@ def retry_server_setup(hostname):
         if not setup_script:
             return jsonify({"error": "Failed to generate setup script"}), 500
         
-        # Execute setup on a working server that has SSH access
-        central_server_ip = "10.10.10.42"  # Using pi5 which has SSH access
-        script_result = execute_setup_on_central_server(central_server_ip, server['ip'], hostname, setup_script)
+        # Try direct SSH setup
+        setup_result = try_direct_ssh_setup(server['ip'], hostname)
         
-        if script_result['success']:
+        if setup_result['success']:
             # Update server status to connected
             for s in servers:
                 if s.get('name') == hostname:
@@ -1226,13 +1160,13 @@ def retry_server_setup(hostname):
             return jsonify({
                 "success": True,
                 "message": f"SSH setup completed successfully for {hostname}",
-                "details": script_result['message']
+                "details": setup_result.get('details', 'SSH access configured')
             })
         else:
             return jsonify({
                 "success": False,
-                "error": f"SSH setup failed: {script_result['error']}",
-                "details": script_result
+                "error": f"SSH setup failed: {setup_result['error']}",
+                "manual_steps": setup_result.get('manual_steps', [])
             }), 500
         
     except Exception as e:
