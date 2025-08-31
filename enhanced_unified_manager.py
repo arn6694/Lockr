@@ -143,9 +143,9 @@ def try_alternative_server_setup(ip_address, hostname):
     try:
         print(f"Executing brian-install.sh on central server for {ip_address}")
         
-        # Execute the setup script on the central server (10.10.10.96)
+        # Execute the setup script on a working server that has SSH access
         # This server should have access to all other servers and your SSH keys
-        central_server_ip = "10.10.10.96"
+        central_server_ip = "10.10.10.42"  # Using pi5 which has SSH access
         
         # Generate the setup script content
         setup_script = generate_brian_setup_script(ip_address)
@@ -1210,8 +1210,8 @@ def retry_server_setup(hostname):
         if not setup_script:
             return jsonify({"error": "Failed to generate setup script"}), 500
         
-        # Execute setup on central server
-        central_server_ip = "10.10.10.96"
+        # Execute setup on a working server that has SSH access
+        central_server_ip = "10.10.10.42"  # Using pi5 which has SSH access
         script_result = execute_setup_on_central_server(central_server_ip, server['ip'], hostname, setup_script)
         
         if script_result['success']:
