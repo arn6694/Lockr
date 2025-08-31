@@ -145,3 +145,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Technical improvements and bug fixes are tracked separately
 - Security features are highlighted in each release
 - Future versions will include migration guides and breaking changes
+
+## 🗺️ Development Roadmap
+
+### Immediate Priorities (v0.95)
+- **Automatic Password Rotation**: Scheduled password changes with configurable intervals
+- **API Tokens Panel**: Generate and manage scoped API tokens for third-party integration
+- **Playbook Trigger Feedback**: Modal/toast confirmation with logs after playbook execution
+- **Password Metadata**: Tags for "rotated," "expires in X days," "last used" lifecycle tracking
+
+### Short-term Goals (v0.96-0.97)
+- **Audit Trail Panel**: Collapsible section showing recent vault access, playbook runs, and password changes
+- **Search & Filter**: Fuzzy search and filters for server cards as inventory grows
+- **Enhanced Password Lifecycle**: Expiration warnings and automatic rotation reminders
+- **Advanced Playbook Management**: Playbook templates and execution history
+
+### Long-term Vision (v1.0+)
+- **Enterprise Features**: High availability, clustering, and advanced security
+- **Compliance & Auditing**: SOC2, HIPAA, and industry-specific compliance features
+- **Professional Support**: Enterprise support and documentation
+- **Performance Optimization**: Advanced caching and connection pooling

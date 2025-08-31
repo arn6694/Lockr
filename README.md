@@ -202,6 +202,26 @@ export LOCKR_HOST=0.0.0.0
 export LOCKR_PORT=5000
 ```
 
+## 🔮 Upcoming Features
+
+### Password Lifecycle Management
+- **Automatic Rotation**: Schedule password changes with configurable intervals
+- **Expiration Tracking**: Monitor password age and set expiration policies
+- **Metadata Tags**: Track "rotated," "expires in X days," "last used" status
+- **Lifecycle Alerts**: Get notified when passwords need rotation
+
+### Enhanced User Experience
+- **Playbook Feedback**: Real-time confirmation and logs after playbook execution
+- **Search & Filter**: Fuzzy search and advanced filtering for growing server inventories
+- **Audit Trail Panel**: Comprehensive logging of all vault access and operations
+- **API Tokens**: Generate and manage scoped tokens for third-party integrations
+
+### Enterprise Capabilities
+- **Advanced Reporting**: Custom reports and analytics dashboard
+- **User Management**: Multi-user support with role-based access control
+- **Backup & Recovery**: Automated backup systems and disaster recovery
+- **Compliance Features**: SOC2, HIPAA, and industry-specific compliance tools
+
 ### Reverse Proxy (Optional)
 
 ```nginx
@@ -315,17 +335,29 @@ tail -f /var/log/lockr/app.log
 
 ## 📈 Roadmap
 
-### Version 0.92 (Next Release)
-- [ ] **Multi-user support** with role-based access
-- [ ] **LDAP/Active Directory integration**
-- [ ] **Advanced reporting** and analytics
-- [ ] **API rate limiting** and monitoring
+### Version 0.95 (Next Release)
+- [ ] **Automatic Password Rotation**: Scheduled password changes with configurable intervals
+- [ ] **API Tokens Panel**: Generate and manage scoped API tokens for third-party integration
+- [ ] **Playbook Trigger Feedback**: Modal/toast confirmation with logs after playbook execution
+- [ ] **Password Metadata**: Tags for "rotated," "expires in X days," "last used" lifecycle tracking
+
+### Version 0.96
+- [ ] **Audit Trail Panel**: Collapsible section showing recent vault access, playbook runs, and password changes
+- [ ] **Search & Filter**: Fuzzy search and filters for server cards as inventory grows
+- [ ] **Enhanced Password Lifecycle**: Expiration warnings and automatic rotation reminders
+- [ ] **Advanced Playbook Management**: Playbook templates and execution history
+
+### Version 0.97
+- [ ] **Third-party Integrations**: Webhook support and API integrations
+- [ ] **Advanced Reporting**: Custom reports and export functionality
+- [ ] **User Management**: Multi-user support with role-based access control
+- [ ] **Backup & Recovery**: Automated backup systems and disaster recovery
 
 ### Version 1.0 (Production Release)
-- [ ] **Enterprise features** for large deployments
-- [ ] **High availability** and clustering
-- [ ] **Advanced security** and compliance
-- [ ] **Professional support** and documentation
+- [ ] **Enterprise Features**: High availability, clustering, and advanced security
+- [ ] **Compliance & Auditing**: SOC2, HIPAA, and industry-specific compliance features
+- [ ] **Professional Support**: Enterprise support and documentation
+- [ ] **Performance Optimization**: Advanced caching and connection pooling
 
 ## 🤝 Support & Community
 
