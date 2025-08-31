@@ -20,7 +20,7 @@ NC='\033[0m' # No Color
 echo -e "${BLUE}🔒 Lockr - SSH Setup via Ansible${NC}"
 echo -e "${BLUE}================================${NC}"
 echo -e "${YELLOW}Target Server:${NC} ${TARGET_HOSTNAME} (${TARGET_SERVER_IP})"
-echo -e "${YELLOW}Central Server:${NC} 10.10.10.96"
+echo -e "${YELLOW}Central Server:${NC} 10.10.10.96 (ser8)"
 echo -e "${YELLOW}Playbook:${NC} ${PLAYBOOK_DIR}/setup_ssh_access.yml"
 echo ""
 

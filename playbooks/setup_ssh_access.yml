@@ -25,8 +25,8 @@
       debug:
         msg: "Setting up SSH access for {{ target_hostname }} ({{ target_server }})"
         
-    - name: Execute brian-install.sh on central server
-      command: "sudo /home/brian/brian-install.sh {{ target_server }} {{ target_hostname }}"
+    - name: Execute remote setup script on central server
+      command: "sudo /home/brian/remote_setup.sh {{ target_server }} {{ target_hostname }}"
       register: setup_result
       ignore_errors: true
       

@@ -10,7 +10,7 @@ import os
 import json
 import secrets
 import string
-from datetime import datetime
+from datetime import datetime, timedelta
 import tempfile
 import shutil
 import paramiko
@@ -20,6 +20,12 @@ import time
 
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
+
+# Configure session to be more persistent
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=24)  # 24 hour session
+app.config['SESSION_COOKIE_SECURE'] = False  # Allow HTTP for local development
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 
 # Import configuration
 try:
@@ -271,7 +277,15 @@ def try_direct_ssh_setup(ip_address, hostname):
         cmd = f"{setup_script} {ip_address} {hostname}"
         print(f"Executing: {cmd}")
         
-        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300)
+        # Set environment variables for the subprocess
+        env = os.environ.copy()
+        env['PATH'] = f"/usr/local/bin:/usr/bin:/bin:{env.get('PATH', '')}"
+        
+        result = subprocess.run(cmd, shell=True, capture_output=True, text=True, timeout=300, env=env)
+        
+        print(f"Command output: {result.stdout}")
+        print(f"Command error: {result.stderr}")
+        print(f"Return code: {result.returncode}")
         
         if result.returncode == 0:
             return {
@@ -653,6 +667,7 @@ def login():
         
         # Simple authentication - replace with proper auth in production
         if username == 'admin' and password == 'admin123':
+            session.permanent = True  # Make session persistent
             session['authenticated'] = True
             session['username'] = username
             return redirect(url_for('index'))
@@ -964,21 +979,38 @@ def change_user_password():
         
         # Change user password using chpasswd
         change_password_cmd = f'echo "{username}:{new_password}" | sudo chpasswd'
+        app.logger.info(f"Executing password change command: {change_password_cmd}")
         stdin, stdout, stderr = ssh.exec_command(change_password_cmd, timeout=30)
         exit_status = stdout.channel.recv_exit_status()
         
+        app.logger.info(f"Password change command exit status: {exit_status}")
+        stderr_output = stderr.read().decode()
+        if stderr_output:
+            app.logger.error(f"Password change stderr: {stderr_output}")
+        
         if exit_status == 0:
-            # Verify the password change worked by testing login
-            test_ssh = paramiko.SSHClient()
-            test_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            app.logger.info("Password change command succeeded, now verifying...")
             
-            try:
-                test_ssh.connect(server_ip, username=username, password=new_password, timeout=10)
-                test_ssh.close()
+            # For root users, skip SSH verification since root SSH login is often disabled
+            if username == 'root':
+                app.logger.info("Skipping SSH verification for root user (root SSH login typically disabled)")
                 password_changed = True
-            except:
-                password_changed = False
+            else:
+                # Verify the password change worked by testing login for non-root users
+                test_ssh = paramiko.SSHClient()
+                test_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                
+                try:
+                    app.logger.info(f"Testing SSH connection with new password for {username}@{server_ip}")
+                    test_ssh.connect(server_ip, username=username, password=new_password, timeout=10)
+                    app.logger.info("SSH connection with new password successful")
+                    test_ssh.close()
+                    password_changed = True
+                except Exception as verify_error:
+                    app.logger.error(f"Password verification failed: {verify_error}")
+                    password_changed = False
         else:
+            app.logger.error(f"Password change command failed with exit status {exit_status}")
             password_changed = False
         
         ssh.close()
