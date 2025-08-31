@@ -83,12 +83,23 @@ echo "Note: You may need to provide existing credentials for ${TARGET_SERVER}"
 echo "Attempting to copy SSH key using ssh-copy-id to existing brian user..."
 
 # Copy the SSH key to the existing brian user
-if ssh-copy-id -i ~/.ssh/id_ed25519.pub "brian@${TARGET_SERVER}"; then
+# Use the correct SSH key paths whether running as root or brian user
+SSH_PUBLIC_KEY="/home/brian/.ssh/id_ed25519.pub"
+SSH_PRIVATE_KEY="/home/brian/.ssh/id_ed25519"
+if [ ! -f "${SSH_PUBLIC_KEY}" ]; then
+    SSH_PUBLIC_KEY="/home/brian/.ssh/id_ed25519.pub"
+fi
+if [ ! -f "${SSH_PRIVATE_KEY}" ]; then
+    SSH_PRIVATE_KEY="/home/brian/.ssh/id_ed25519"
+fi
+
+if ssh-copy-id -i "${SSH_PUBLIC_KEY}" -o StrictHostKeyChecking=no "brian@${TARGET_SERVER}"; then
     echo "SSH key copied to brian user successfully"
     
-    # Test the new SSH key authentication
-    echo "Testing new SSH access..."
-    if ssh -i ~/.ssh/id_ed25519 "brian@${TARGET_SERVER}" "echo 'SSH key authentication working!'"; then
+                # Test the new SSH key authentication
+            echo "Testing new SSH access..."
+            # Use the private key for verification
+            if ssh -i "${SSH_PRIVATE_KEY}" "brian@${TARGET_SERVER}" "echo 'SSH key authentication working!'"; then
         echo "✅ SSH setup verified successfully!"
         echo ""
         echo "Note: The brian user on ${TARGET_SERVER} may not have sudo access without password."

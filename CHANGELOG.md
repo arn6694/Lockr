@@ -5,6 +5,18 @@ All notable changes to Lockr will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.93] - 2025-08-31
+
+### Added
+- **Timestamp Tracking System**: Implemented proper timestamp tracking for password operations
+- **Last Updated Field**: Fixed the "Last updated" information to properly update when passwords are created, changed, or retrieved
+- **Timestamp Files**: Added individual timestamp files for each password to track when they were last modified
+
+### Technical Improvements
+- **update_password_timestamp() Function**: New helper function to manage password timestamps
+- **Enhanced Password Operations**: All password operations (create, change, retrieve) now update timestamps
+- **Fallback Timestamp System**: Maintains backward compatibility with existing password files
+
 ## [0.92] - 2025-08-31
 
 ### Added
@@ -96,8 +108,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - **0.9**: Previous development version
 - **0.91**: Systemd service integration
-- **0.92**: Current version - SSH setup and password management fixes
-- **0.93, 0.94, etc.**: Incremental updates and bug fixes
+- **0.92**: SSH setup and password management fixes
+- **0.93**: Current version - Timestamp tracking system and Last Updated field fixes
+- **0.94, 0.95, etc.**: Incremental updates and bug fixes
 - **1.0**: Production release for boss presentation
 - **1.1, 1.2, etc.**: Post-production feature updates
 
