@@ -5,6 +5,30 @@ All notable changes to Lockr will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.94] - 2025-08-31
+
+### Added
+- **Comprehensive Health Check System**: Real-time server health monitoring
+  - Connectivity testing (ping)
+  - SSH port availability check
+  - SSH key authentication verification
+  - System resource monitoring (CPU, memory, disk)
+- **Real Server Status Detection**: Accurate online/offline status instead of static counts
+- **Health Check Dashboard**: Visual health status with detailed results modal
+- **Enhanced Server Statistics**: Separate counts for online, offline, and degraded servers
+- **Health Check API Endpoints**: `/api/health_check` and `/api/health_check_all`
+
+### Technical Improvements
+- **Server Status Validation**: Automatic connectivity testing on dashboard load
+- **Health Check Results Modal**: Detailed breakdown of each health check component
+- **Real-time Status Updates**: Server counts update based on actual connectivity
+- **Enhanced Error Handling**: Comprehensive error reporting for health check failures
+
+### Fixed
+- **Server Count Accuracy**: Online servers count now reflects actual connectivity status
+- **Status Icon Colors**: Online servers icon is now green, offline servers are red
+- **Health Check Button**: Previously placeholder, now fully functional
+
 ## [0.93] - 2025-08-31
 
 ### Added
@@ -109,8 +133,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **0.9**: Previous development version
 - **0.91**: Systemd service integration
 - **0.92**: SSH setup and password management fixes
-- **0.93**: Current version - Timestamp tracking system and Last Updated field fixes
-- **0.94, 0.95, etc.**: Incremental updates and bug fixes
+- **0.93**: Timestamp tracking system and Last Updated field fixes
+- **0.94**: Current version - Comprehensive health check system and real server status detection
+- **0.95, 0.96, etc.**: Incremental updates and bug fixes
 - **1.0**: Production release for boss presentation
 - **1.1, 1.2, etc.**: Post-production feature updates
 

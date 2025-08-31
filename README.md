@@ -3,7 +3,7 @@
 [![Python](https://img.shields.io/badge/Python-3.12+-blue.svg)](https://www.python.org/downloads/)
 [![Flask](https://img.shields.io/badge/Flask-3.0.0-green.svg)](https://flask.palletsprojects.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Version](https://img.shields.io/badge/Version-0.93-blue.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/Version-0.94-blue.svg)](CHANGELOG.md)
 
 > **Professional-grade server management and password security platform for Linux administrators**
 

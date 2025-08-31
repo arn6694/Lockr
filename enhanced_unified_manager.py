@@ -76,6 +76,153 @@ def save_servers(servers):
         print(f"Error saving servers: {e}")
         return False
 
+def perform_health_check(server_ip, server_name):
+    """Perform comprehensive health check on a server"""
+    health_results = {
+        "server": server_name,
+        "ip": server_ip,
+        "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "overall_status": "unknown",
+        "checks": {}
+    }
+    
+    try:
+        # 1. Basic Connectivity Check
+        connectivity_result = test_connectivity(server_ip, timeout=5)
+        health_results["checks"]["connectivity"] = {
+            "status": "online" if connectivity_result else "offline",
+            "details": "Ping test successful" if connectivity_result else "Ping test failed"
+        }
+        
+        # 2. SSH Port Check
+        ssh_result = test_ssh_port(server_ip, 22, timeout=5)
+        health_results["checks"]["ssh_port"] = {
+            "status": "open" if ssh_result else "closed",
+            "details": "SSH port 22 is accessible" if ssh_result else "SSH port 22 is not accessible"
+        }
+        
+        # 3. SSH Authentication Check (if we have SSH keys)
+        ssh_auth_result = test_ssh_authentication(server_ip)
+        health_results["checks"]["ssh_auth"] = {
+            "status": "authenticated" if ssh_auth_result else "not_authenticated",
+            "details": "SSH key authentication successful" if ssh_auth_result else "SSH key authentication failed"
+        }
+        
+        # 4. System Resource Check (if SSH is available)
+        if ssh_auth_result:
+            system_resources = check_system_resources(server_ip)
+            health_results["checks"]["system_resources"] = system_resources
+        else:
+            health_results["checks"]["system_resources"] = {
+                "status": "unknown",
+                "details": "Cannot check system resources without SSH access"
+            }
+        
+        # Determine overall status
+        online_checks = sum(1 for check in health_results["checks"].values() 
+                           if check["status"] in ["online", "open", "authenticated", "healthy"])
+        total_checks = len(health_results["checks"])
+        
+        if online_checks == total_checks:
+            health_results["overall_status"] = "healthy"
+        elif online_checks > total_checks / 2:
+            health_results["overall_status"] = "degraded"
+        else:
+            health_results["overall_status"] = "unhealthy"
+            
+        return health_results
+        
+    except Exception as e:
+        health_results["overall_status"] = "error"
+        health_results["checks"]["error"] = {
+            "status": "error",
+            "details": f"Health check failed: {str(e)}"
+        }
+        return health_results
+
+def test_ssh_port(host, port, timeout=5):
+    """Test if SSH port is open on a host"""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result == 0
+    except Exception as e:
+        app.logger.error(f"SSH port test failed for {host}:{port}: {e}")
+        return False
+
+def test_ssh_authentication(host):
+    """Test SSH key authentication to a host"""
+    try:
+        if not os.path.exists(SSH_KEY_PATH):
+            return False
+            
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+        ssh.connect(host, username=SSH_USER, pkey=private_key, timeout=10)
+        ssh.close()
+        return True
+    except Exception as e:
+        app.logger.error(f"SSH authentication test failed for {host}: {e}")
+        return False
+
+def check_system_resources(host):
+    """Check system resources on a remote host"""
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+        ssh.connect(host, username=SSH_USER, pkey=private_key, timeout=10)
+        
+        # Check CPU load
+        stdin, stdout, stderr = ssh.exec_command("uptime | awk '{print $10}' | sed 's/,//'", timeout=10)
+        cpu_load = stdout.read().decode().strip()
+        
+        # Check memory usage
+        stdin, stdout, stderr = ssh.exec_command("free -m | awk 'NR==2{printf \"%.1f%%\", $3*100/$2}'", timeout=10)
+        memory_usage = stdout.read().decode().strip()
+        
+        # Check disk usage
+        stdin, stdout, stderr = ssh.exec_command("df -h / | awk 'NR==2{print $5}'", timeout=10)
+        disk_usage = stdout.read().decode().strip()
+        
+        ssh.close()
+        
+        # Determine resource health
+        try:
+            load_float = float(cpu_load)
+            mem_float = float(memory_usage.replace('%', ''))
+            disk_float = float(disk_usage.replace('%', ''))
+            
+            if load_float < 2.0 and mem_float < 80 and disk_float < 80:
+                status = "healthy"
+            elif load_float < 5.0 and mem_float < 90 and disk_float < 90:
+                status = "warning"
+            else:
+                status = "critical"
+                
+        except ValueError:
+            status = "unknown"
+        
+        return {
+            "status": status,
+            "details": f"CPU Load: {cpu_load}, Memory: {memory_usage}, Disk: {disk_usage}",
+            "cpu_load": cpu_load,
+            "memory_usage": memory_usage,
+            "disk_usage": disk_usage
+        }
+        
+    except Exception as e:
+        app.logger.error(f"System resource check failed for {host}: {e}")
+        return {
+            "status": "error",
+            "details": f"Failed to check system resources: {str(e)}"
+        }
+
 def test_connectivity(host, timeout=5):
     """Test basic connectivity to a host"""
     try:
@@ -677,10 +824,38 @@ def index():
         return redirect(url_for('login'))
     
     servers = load_servers()
+    
+    # Count servers by actual status
+    total_servers = len(servers)
+    online_servers = 0
+    offline_servers = 0
+    degraded_servers = 0
+    
+    for server in servers:
+        if server['status'] == 'online':
+            online_servers += 1
+        elif server['status'] == 'offline':
+            offline_servers += 1
+        elif server['status'] == 'degraded':
+            degraded_servers += 1
+        else:
+            # If status is unknown, check connectivity
+            if test_connectivity(server['ip'], timeout=3):
+                server['status'] = 'online'
+                online_servers += 1
+            else:
+                server['status'] = 'offline'
+                offline_servers += 1
+    
+    # Save updated statuses
+    save_servers(servers)
+    
     return render_template('enhanced_dashboard.html', 
                          servers=servers,
-                         total_servers=len(servers),
-                         online_servers=len([s for s in servers if s['status'] == 'online']))
+                         total_servers=total_servers,
+                         online_servers=online_servers,
+                         offline_servers=offline_servers,
+                         degraded_servers=degraded_servers)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -1170,6 +1345,73 @@ def get_passwords():
     
     result = list_all_passwords()
     return jsonify(result)
+
+@app.route('/api/health_check', methods=['POST'])
+def health_check():
+    """API endpoint to perform health check on a specific server"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+
+    data = request.get_json()
+    server_ip = data.get('server_ip')
+    server_name = data.get('server_name', 'Unknown')
+    
+    if not server_ip:
+        return jsonify({"error": "Server IP required"}), 400
+    
+    try:
+        health_result = perform_health_check(server_ip, server_name)
+        return jsonify({
+            "success": True,
+            "health_data": health_result
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Health check failed: {str(e)}"
+        }), 500
+
+@app.route('/api/health_check_all', methods=['POST'])
+def health_check_all():
+    """API endpoint to perform health check on all servers"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+
+    try:
+        servers = load_servers()
+        all_health_results = []
+        
+        for server in servers:
+            health_result = perform_health_check(server['ip'], server['name'])
+            all_health_results.append(health_result)
+            
+            # Update server status based on health check
+            if health_result['overall_status'] == 'healthy':
+                server['status'] = 'online'
+            elif health_result['overall_status'] == 'degraded':
+                server['status'] = 'degraded'
+            else:
+                server['status'] = 'offline'
+        
+        # Save updated server statuses
+        save_servers(servers)
+        
+        return jsonify({
+            "success": True,
+            "health_results": all_health_results,
+            "summary": {
+                "total_servers": len(servers),
+                "healthy": len([s for s in all_health_results if s['overall_status'] == 'healthy']),
+                "degraded": len([s for s in all_health_results if s['overall_status'] == 'degraded']),
+                "unhealthy": len([s for s in all_health_results if s['overall_status'] == 'unhealthy']),
+                "offline": len([s for s in all_health_results if s['overall_status'] == 'unhealthy'])
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Health check failed: {str(e)}"
+        }), 500
 
 @app.route('/api/debug_connectivity', methods=['POST'])
 def debug_connectivity():

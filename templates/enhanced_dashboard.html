@@ -402,7 +402,7 @@
                         <div class="text-center">
                             <small class="text-muted version-display">
                                 <i class="fas fa-tag me-1"></i>
-                                Lockr v0.93
+                                Lockr v0.94
                             </small>
                         </div>
                     </div>
@@ -638,7 +638,7 @@
                                             <tbody>
                                                 <tr>
                                                     <td><strong>Lockr Version:</strong></td>
-                                                    <td><span class="badge bg-primary">0.93</span></td>
+                                                    <td><span class="badge bg-primary">0.94</span></td>
                                                 </tr>
                                                 <tr>
                                                     <td><strong>Python Version:</strong></td>
@@ -692,11 +692,37 @@
                                         <div class="accordion" id="releaseNotes">
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
-                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v093">
-                                                        Version 0.93 - Current Release
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v094">
+                                                        Version 0.94 - Current Release
                                                     </button>
                                                 </h2>
-                                                <div id="v093" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                <div id="v094" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>New Features:</strong>
+                                                        <ul>
+                                                            <li>Comprehensive Health Check System for all servers</li>
+                                                            <li>Real-time server status detection (online/offline)</li>
+                                                            <li>Enhanced server statistics with separate counts</li>
+                                                            <li>Health check results modal with detailed breakdown</li>
+                                                        </ul>
+                                                        <strong>Technical Improvements:</strong>
+                                                        <ul>
+                                                            <li>Connectivity testing, SSH port checks, authentication verification</li>
+                                                            <li>System resource monitoring (CPU, memory, disk usage)</li>
+                                                            <li>Automatic server status validation on dashboard load</li>
+                                                            <li>Health check API endpoints for individual and bulk operations</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v093">
+                                                        Version 0.93 - Timestamp Tracking
+                                                    </button>
+                                                </h2>
+                                                <div id="v093" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
                                                     <div class="accordion-body">
                                                         <strong>New Features:</strong>
                                                         <ul>
@@ -834,10 +860,16 @@
                                                 </thead>
                                                 <tbody>
                                                     <tr>
-                                                        <td><span class="badge bg-primary">0.93</span></td>
+                                                        <td><span class="badge bg-primary">0.94</span></td>
+                                                        <td>2025-08-31</td>
+                                                        <td>Health check system, real server status</td>
+                                                        <td><span class="badge bg-success">Current</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">0.93</span></td>
                                                         <td>2025-08-31</td>
                                                         <td>Timestamp tracking, Last Updated fixes</td>
-                                                        <td><span class="badge bg-success">Current</span></td>
+                                                        <td><span class="badge bg-info">Released</span></td>
                                                     </tr>
                                                     <tr>
                                                         <td><span class="badge bg-secondary">0.92</span></td>
@@ -901,10 +933,46 @@
                                         <div class="text-xs font-weight-bold text-uppercase mb-1">
                                             Online Servers
                                         </div>
-                                        <div class="h5 mb-0 font-weight-bold">{{ online_servers }}</div>
+                                        <div class="h5 mb-0 font-weight-bold text-success">{{ online_servers }}</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-wifi fa-2x text-white-50"></i>
+                                        <i class="fas fa-wifi fa-2x text-success"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Offline Servers
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-danger">{{ offline_servers }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Degraded Servers
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold text-warning">{{ degraded_servers }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
                                     </div>
                                 </div>
                             </div>
@@ -3140,13 +3208,182 @@
         
         // Bulk health check for all servers
         function bulkHealthCheck() {
-            if (confirm('Run health check on all servers? This will verify SSH access, sudo privileges, and basic system health.')) {
+            if (confirm('Run health check on all servers? This will verify connectivity, SSH access, and system health.')) {
+                // Show loading state
                 showResult('Bulk Health Check', `
                     <div class="alert alert-info">
                         <strong>Running health check on all servers...</strong><br>
-                        This feature will be implemented soon to perform comprehensive health checks on all managed servers.
+                        <div class="spinner-border spinner-border-sm me-2" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Checking connectivity, SSH ports, authentication, and system resources...
                     </div>
                 `);
+                
+                // Run health check on all servers
+                fetch('/api/health_check_all', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Update server counts
+                        updateServerCounts(data.summary);
+                        
+                        // Show health check results
+                        showHealthCheckResults(data.health_results);
+                        
+                        // Refresh the page to show updated statuses
+                        setTimeout(() => {
+                            location.reload();
+                        }, 3000);
+                    } else {
+                        showResult('Health Check Failed', `
+                            <div class="alert alert-danger">
+                                <strong>Health check failed:</strong><br>
+                                ${data.error}
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showResult('Health Check Error', `
+                        <div class="alert alert-danger">
+                            <strong>Health check error:</strong><br>
+                            ${error.message}
+                        </div>
+                    `);
+                });
+            }
+        }
+
+        function updateServerCounts(summary) {
+            // Update the server count displays
+            if (document.getElementById('totalServersCount')) {
+                document.getElementById('totalServersCount').textContent = summary.total_servers;
+            }
+            if (document.getElementById('onlineServersCount')) {
+                document.getElementById('onlineServersCount').textContent = summary.healthy;
+            }
+            if (document.getElementById('pendingServersCount')) {
+                document.getElementById('pendingServersCount').textContent = summary.degraded;
+            }
+        }
+
+        function showHealthCheckResults(healthResults) {
+            // Create a modal to show health check results
+            const modal = document.createElement('div');
+            modal.className = 'modal fade';
+            modal.id = 'healthCheckModal';
+            modal.innerHTML = `
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header bg-success text-white">
+                            <h5 class="modal-title">
+                                <i class="fas fa-heartbeat me-2"></i>Health Check Results
+                            </h5>
+                            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="alert alert-info">
+                                <i class="fas fa-info-circle me-2"></i>
+                                Health check completed on ${healthResults.length} servers
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Server</th>
+                                            <th>Status</th>
+                                            <th>Connectivity</th>
+                                            <th>SSH Port</th>
+                                            <th>SSH Auth</th>
+                                            <th>Resources</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${healthResults.map(result => `
+                                            <tr>
+                                                <td><strong>${result.server}</strong><br><small class="text-muted">${result.ip}</small></td>
+                                                <td>
+                                                    <span class="badge ${getStatusBadgeClass(result.overall_status)}">
+                                                        ${result.overall_status.toUpperCase()}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getCheckBadgeClass(result.checks.connectivity?.status)}">
+                                                        ${result.checks.connectivity?.status || 'unknown'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getCheckBadgeClass(result.checks.ssh_port?.status)}">
+                                                        ${result.checks.ssh_port?.status || 'unknown'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getCheckBadgeClass(result.checks.ssh_auth?.status)}">
+                                                        ${result.checks.ssh_auth?.status || 'unknown'}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge ${getCheckBadgeClass(result.checks.system_resources?.status)}">
+                                                        ${result.checks.system_resources?.status || 'unknown'}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+            
+            // Show the modal
+            const bootstrapModal = new bootstrap.Modal(modal);
+            bootstrapModal.show();
+            
+            // Remove modal from DOM when hidden
+            modal.addEventListener('hidden.bs.modal', () => {
+                document.body.removeChild(modal);
+            });
+        }
+
+        function getStatusBadgeClass(status) {
+            switch (status) {
+                case 'healthy': return 'bg-success';
+                case 'degraded': return 'bg-warning';
+                case 'unhealthy': return 'bg-danger';
+                case 'offline': return 'bg-secondary';
+                default: return 'bg-secondary';
+            }
+        }
+
+        function getCheckBadgeClass(status) {
+            switch (status) {
+                case 'online':
+                case 'open':
+                case 'authenticated':
+                case 'healthy': return 'bg-success';
+                case 'degraded':
+                case 'warning': return 'bg-warning';
+                case 'offline':
+                case 'closed':
+                case 'not_authenticated':
+                case 'unhealthy':
+                case 'critical': return 'bg-danger';
+                default: return 'bg-secondary';
             }
         }
         
