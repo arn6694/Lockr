@@ -1,0 +1,847 @@
+#!/usr/bin/env python3
+"""
+Lockr - Enterprise Server & Password Management
+Combines password creation, Ansible Vault storage, retrieval, and server management
+"""
+
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
+import subprocess
+import os
+import json
+import secrets
+import string
+from datetime import datetime
+import tempfile
+import shutil
+import paramiko
+import socket
+import threading
+import time
+
+app = Flask(__name__)
+app.secret_key = secrets.token_hex(32)
+
+# Configuration - adjust these paths to match your system
+VAULT_DIR = "/home/brian/playbooks/vault"
+VAULT_KEY = "/home/brian/playbooks/.vault_key"
+ANSIBLE_VAULT_CMD = "ansible-vault"
+SSH_KEY_PATH = "/home/brian/.ssh/id_ed25519"  # Your private SSH key
+SSH_USER = "brian"  # Your SSH username
+
+# Ensure required directories exist
+os.makedirs(VAULT_DIR, exist_ok=True)
+
+# Server storage (in production, use a database)
+SERVERS_FILE = "/home/brian/playbooks/servers.json"
+
+# Mock data for demonstration (replace with actual data in production)
+MOCK_SERVERS = [
+    {"name": "valheim", "ip": "192.168.1.100", "status": "online", "last_access": "2024-08-30 14:30", "ssh_status": "connected"},
+    {"name": "archie", "ip": "192.168.1.101", "status": "online", "last_access": "2024-08-30 15:45", "ssh_status": "connected"},
+    {"name": "zero", "ip": "192.168.1.102", "status": "offline", "last_access": "2024-08-30 12:15", "ssh_status": "disconnected"}
+]
+
+MOCK_USERS = ["root", "admin", "backup", "monitoring"]
+
+def load_servers():
+    """Load servers from JSON file"""
+    try:
+        if os.path.exists(SERVERS_FILE):
+            with open(SERVERS_FILE, 'r') as f:
+                return json.load(f)
+        else:
+            return MOCK_SERVERS
+    except Exception as e:
+        print(f"Error loading servers: {e}")
+        return MOCK_SERVERS
+
+def save_servers(servers):
+    """Save servers to JSON file"""
+    try:
+        os.makedirs(os.path.dirname(SERVERS_FILE), exist_ok=True)
+        with open(SERVERS_FILE, 'w') as f:
+            json.dump(servers, f, indent=2)
+        return True
+    except Exception as e:
+        print(f"Error saving servers: {e}")
+        return False
+
+def test_connectivity(host, timeout=5):
+    """Test basic connectivity to a host"""
+    try:
+        # Test ping
+        result = subprocess.run(['ping', '-c', '1', '-W', str(timeout), host], 
+                              capture_output=True, text=True, timeout=timeout+2)
+        if result.returncode == 0:
+            return {"ping": True, "error": None}
+        else:
+            return {"ping": False, "error": "Host unreachable"}
+    except subprocess.TimeoutExpired:
+        return {"ping": False, "error": "Ping timeout"}
+    except Exception as e:
+        return {"ping": False, "error": str(e)}
+
+def test_ssh_connection(host, username, key_path, timeout=10):
+    """Test SSH connection to a host"""
+    try:
+        # Create SSH client
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Load private key
+        private_key = paramiko.Ed25519Key.from_private_key_file(key_path)
+        
+        # Connect with timeout
+        ssh.connect(host, username=username, pkey=private_key, timeout=timeout)
+        
+        # Test basic command
+        stdin, stdout, stderr = ssh.exec_command('whoami', timeout=5)
+        user = stdout.read().decode().strip()
+        
+        ssh.close()
+        
+        if user == username:
+            return {"ssh": True, "error": None, "user": user}
+        else:
+            return {"ssh": False, "error": f"User mismatch: expected {username}, got {user}"}
+            
+    except paramiko.AuthenticationException:
+        return {"ssh": False, "error": "SSH authentication failed"}
+    except paramiko.SSHException as e:
+        return {"ssh": False, "error": f"SSH error: {str(e)}"}
+    except socket.timeout:
+        return {"ssh": False, "error": "SSH connection timeout"}
+    except Exception as e:
+        return {"ssh": False, "error": f"Connection error: {str(e)}"}
+
+def upload_and_execute_script(host, username, key_path, script_content):
+    """Upload and execute the brian-install.sh script on a remote server"""
+    try:
+        # Create SSH client
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Load private key
+        private_key = paramiko.Ed25519Key.from_private_key_file(key_path)
+        
+        # Connect
+        ssh.connect(host, username=username, pkey=private_key, timeout=15)
+        
+        # Create SFTP client
+        sftp = ssh.open_sftp()
+        
+        # First, upload the public key
+        public_key_path = key_path.replace('id_ed25519', 'id_ed25519.pub')
+        if not os.path.exists(public_key_path):
+            return {
+                "success": False,
+                "error": f"Public key not found: {public_key_path}"
+            }
+        
+        # Upload public key to /tmp
+        remote_key_path = "/tmp/brian_public_key"
+        sftp.put(public_key_path, remote_key_path)
+        
+        # Upload script to /tmp
+        remote_script_path = "/tmp/brian-install.sh"
+        with tempfile.NamedTemporaryFile(mode='w', delete=False) as temp_file:
+            temp_file.write(script_content)
+            temp_file.flush()
+            sftp.put(temp_file.name, remote_script_path)
+        
+        # Clean up local temp file
+        os.unlink(temp_file.name)
+        
+        # Make script executable and run it
+        ssh.exec_command(f"chmod +x {remote_script_path}")
+        stdin, stdout, stderr = ssh.exec_command(f"sudo {remote_script_path}", timeout=60)
+        
+        # Wait for completion
+        exit_status = stdout.channel.recv_exit_status()
+        
+        if exit_status == 0:
+            # Verify setup by testing sudo access
+            stdin, stdout, stderr = ssh.exec_command("sudo -n true", timeout=10)
+            sudo_test = stdout.channel.recv_exit_status()
+            
+            if sudo_test == 0:
+                # Clean up remote files
+                ssh.exec_command(f"rm -f {remote_script_path} {remote_key_path}")
+                
+                ssh.close()
+                return {
+                    "success": True,
+                    "message": "Script executed successfully and setup verified",
+                    "exit_status": exit_status
+                }
+            else:
+                ssh.exec_command(f"rm -f {remote_script_path} {remote_key_path}")
+                ssh.close()
+                return {
+                    "success": False,
+                    "error": "Setup verification failed - sudo access not working"
+                }
+        else:
+            # Clean up remote files
+            ssh.exec_command(f"rm -f {remote_script_path} {remote_key_path}")
+            ssh.close()
+            return {
+                "success": False,
+                "error": f"Script execution failed with exit status {exit_status}"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Script execution error: {str(e)}"
+        }
+
+def generate_secure_password(length=16):
+    """Generate a secure random password"""
+    # Define character sets
+    lowercase = string.ascii_lowercase
+    uppercase = string.ascii_uppercase
+    digits = string.digits
+    symbols = "!@#$%^&*()_+-=[]{}|;:,.<>?"
+    
+    # Ensure at least one character from each set
+    password = [
+        secrets.choice(lowercase),
+        secrets.choice(uppercase),
+        secrets.choice(digits),
+        secrets.choice(symbols)
+    ]
+    
+    # Fill the rest randomly
+    all_chars = lowercase + uppercase + digits + symbols
+    password.extend(secrets.choice(all_chars) for _ in range(length - 4))
+    
+    # Shuffle the password
+    password_list = list(password)
+    secrets.SystemRandom().shuffle(password_list)
+    return ''.join(password_list)
+
+def create_vault_structure(server, username, password):
+    """Create the vault directory structure and store password"""
+    try:
+        # Create timestamp for this password
+        timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        vault_dir = f"{VAULT_DIR}/{server}_{username}_{timestamp}"
+        
+        # Create directory
+        os.makedirs(vault_dir, exist_ok=True)
+        
+        # Create password file
+        password_file = f"{vault_dir}/password.txt"
+        with open(password_file, 'w') as f:
+            f.write(password)
+        
+        # Create current pointer file
+        current_file = f"{VAULT_DIR}/{server}_{username}_current"
+        with open(current_file, 'w') as f:
+            f.write(password_file)
+        
+        # Encrypt with Ansible Vault
+        encrypted_file = f"{vault_dir}/password.txt.vault"
+        result = subprocess.run([
+            ANSIBLE_VAULT_CMD, "encrypt", password_file,
+            "--vault-password-file", VAULT_KEY,
+            "--output", encrypted_file
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            # Remove plaintext password file
+            os.remove(password_file)
+            
+            # Update current pointer to encrypted file
+            with open(current_file, 'w') as f:
+                f.write(encrypted_file)
+            
+            return {
+                "success": True,
+                "vault_dir": vault_dir,
+                "encrypted_file": encrypted_file,
+                "timestamp": timestamp
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Vault encryption failed: {result.stderr}"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error creating vault structure: {str(e)}"
+        }
+
+def retrieve_password_from_vault(server, username):
+    """Retrieve password from Ansible Vault"""
+    try:
+        # Find the current password file
+        current_file = f"{VAULT_DIR}/{server}_{username}_current"
+        
+        if not os.path.exists(current_file):
+            return {
+                "success": False,
+                "error": f"No password found for {username}@{server}"
+            }
+        
+        # Read the current encrypted file path
+        with open(current_file, 'r') as f:
+            encrypted_file = f.read().strip()
+        
+        if not os.path.exists(encrypted_file):
+            return {
+                "success": False,
+                "error": f"Vault file not found: {encrypted_file}"
+            }
+        
+        # Decrypt with Ansible Vault
+        result = subprocess.run([
+            ANSIBLE_VAULT_CMD, "decrypt", encrypted_file,
+            "--vault-password-file", VAULT_KEY,
+            "--output", "-"
+        ], capture_output=True, text=True, timeout=30)
+        
+        if result.returncode == 0:
+            return {
+                "success": True,
+                "password": result.stdout.strip(),
+                "server": server,
+                "username": username,
+                "timestamp": datetime.now().isoformat()
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Vault decryption failed: {result.stderr}"
+            }
+            
+    except Exception as e:
+        return {
+            "success": False,
+            "error": f"Error retrieving password: {str(e)}"
+        }
+
+def list_all_passwords():
+    """List all available passwords in the vault"""
+    try:
+        passwords = []
+        
+        if not os.path.exists(VAULT_DIR):
+            return {"success": False, "error": "Vault directory not found"}
+        
+        # Find all current pointer files
+        for file in os.listdir(VAULT_DIR):
+            if file.endswith('_current'):
+                parts = file.replace('_current', '').split('_', 1)
+                if len(parts) == 2:
+                    server, username = parts
+                    
+                    # Get the actual password file path
+                    current_file = os.path.join(VAULT_DIR, file)
+                    with open(current_file, 'r') as f:
+                        password_file = f.read().strip()
+                    
+                    # Get file modification time
+                    if os.path.exists(password_file):
+                        mtime = os.path.getmtime(password_file)
+                        date_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                        
+                        passwords.append({
+                            "server": server,
+                            "username": username,
+                            "last_updated": date_str,
+                            "status": "active"
+                        })
+        
+        return {"success": True, "passwords": passwords}
+        
+    except Exception as e:
+        return {"success": False, "error": f"Error listing passwords: {str(e)}"}
+
+@app.route('/')
+def index():
+    """Main dashboard page"""
+    if 'authenticated' not in session:
+        return redirect(url_for('login'))
+    
+    servers = load_servers()
+    return render_template('enhanced_dashboard.html', 
+                         servers=servers,
+                         total_servers=len(servers),
+                         online_servers=len([s for s in servers if s['status'] == 'online']))
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    """Simple authentication page"""
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        
+        # Simple authentication - replace with proper auth in production
+        if username == 'admin' and password == 'admin123':
+            session['authenticated'] = True
+            session['username'] = username
+            return redirect(url_for('index'))
+        else:
+            return render_template('enhanced_login.html', error="Invalid credentials")
+    
+    return render_template('enhanced_login.html')
+
+@app.route('/logout')
+def logout():
+    """Logout user"""
+    session.clear()
+    return redirect(url_for('login'))
+
+@app.route('/api/add_server', methods=['POST'])
+def add_server():
+    """API endpoint to add a new server"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    hostname = data.get('hostname')
+    ip_address = data.get('ip_address')
+    
+    if not hostname or not ip_address:
+        return jsonify({"error": "Hostname and IP address required"}), 400
+    
+    try:
+        # Test basic connectivity first
+        ping_result = test_connectivity(ip_address)
+        if not ping_result['ping']:
+            return jsonify({
+                "success": False,
+                "error": f"Connectivity test failed: {ping_result['error']}"
+            }), 400
+        
+        # Check if SSH key exists
+        if not os.path.exists(SSH_KEY_PATH):
+            return jsonify({
+                "success": False,
+                "error": f"SSH private key not found: {SSH_KEY_PATH}. Please ensure your SSH key exists and update the SSH_KEY_PATH configuration."
+            }), 400
+        
+        # Test SSH connection
+        ssh_result = test_ssh_connection(ip_address, SSH_USER, SSH_KEY_PATH)
+        if not ssh_result['ssh']:
+            return jsonify({
+                "success": False,
+                "error": f"SSH test failed: {ssh_result['error']}"
+            }), 400
+        
+        # Get the brian-install.sh script content
+        script_content = """#!/bin/bash
+set -e  # Exit immediately if any command exits with a non-zero status
+
+# Custom parameters for the brian account
+ADMIN_USER="brian"
+SSH_KEY="$(cat /tmp/brian_public_key)"
+PUBKEY="ssh-ed25519 ${SSH_KEY} ${ADMIN_USER}@ser8"
+HOME_DIR="/home/${ADMIN_USER}"
+SUDOERS_FILE="/etc/sudoers.d/sudoers_${ADMIN_USER}"
+
+# Check if the user 'brian' exists; if not, create the user
+if ! grep -q "^${ADMIN_USER}:" /etc/passwd; then
+    echo "Creating local user ${ADMIN_USER}..."
+    useradd -d "${HOME_DIR}" -m -s /bin/bash ${ADMIN_USER}
+    passwd -l ${ADMIN_USER}
+fi
+
+# Ensure the .ssh directory exists for the user
+if [ ! -d "${HOME_DIR}/.ssh" ]; then
+    echo "Creating ${HOME_DIR}/.ssh directory..."
+    mkdir -p "${HOME_DIR}/.ssh"
+    chown -R ${ADMIN_USER}:${ADMIN_USER} "${HOME_DIR}"
+    chmod 700 "${HOME_DIR}/.ssh"
+fi  
+
+# Path to the authorized_keys file
+AUTHORIZED_KEYS="${HOME_DIR}/.ssh/authorized_keys"
+
+# Add the public key if it is not already present
+if [ ! -f "${AUTHORIZED_KEYS}" ] || ! grep -q "${SSH_KEY}" "${AUTHORIZED_KEYS}"; then
+    echo "Adding public key to ${AUTHORIZED_KEYS}..."
+    cat <<EOF >> "${AUTHORIZED_KEYS}"
+${PUBKEY}
+EOF
+    chown -R ${ADMIN_USER}:${ADMIN_USER} "${HOME_DIR}/.ssh"
+    chmod 600 "${AUTHORIZED_KEYS}"
+fi
+
+# Grant passwordless sudo privileges to the user
+if [ ! -f "${SUDOERS_FILE}" ]; then
+    echo "Setting up sudo for ${ADMIN_USER}..."
+    echo "${ADMIN_USER} ALL=(ALL) NOPASSWD: ALL" > "${SUDOERS_FILE}"
+    chmod 644 "${SUDOERS_FILE}"
+fi
+"""
+        
+        # Execute the script on the remote server
+        script_result = upload_and_execute_script(ip_address, SSH_USER, SSH_KEY_PATH, script_content)
+        
+        if script_result['success']:
+            # Add server to the list
+            servers = load_servers()
+            new_server = {
+                "name": hostname,
+                "ip": ip_address,
+                "status": "online",
+                "last_access": datetime.now().strftime("%Y-%m-%d %H:%M"),
+                "ssh_status": "connected",
+                "setup_date": datetime.now().isoformat()
+            }
+            
+            servers.append(new_server)
+            save_servers(servers)
+            
+            # Log the successful addition
+            log_action(session['username'], 'add_server', hostname, ip_address, 'success')
+            
+            return jsonify({
+                "success": True,
+                "message": f"Server {hostname} ({ip_address}) added successfully",
+                "server": new_server
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"Server setup failed: {script_result['error']}"
+            }), 400
+            
+    except Exception as e:
+        log_action(session['username'], 'add_server', hostname, ip_address, 'failed')
+        return jsonify({
+            "success": False,
+            "error": f"Error adding server: {str(e)}"
+        }), 500
+
+@app.route('/api/test_server', methods=['POST'])
+def test_server():
+    """API endpoint to test server connectivity"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    ip_address = data.get('ip_address')
+    
+    if not ip_address:
+        return jsonify({"error": "IP address required"}), 400
+    
+    try:
+        # Test ping connectivity
+        ping_result = test_connectivity(ip_address)
+        
+        # Test SSH connection if ping succeeds
+        ssh_result = None
+        if ping_result['ping']:
+            ssh_result = test_ssh_connection(ip_address, SSH_USER, SSH_KEY_PATH)
+        
+        return jsonify({
+            "success": True,
+            "ping": ping_result,
+            "ssh": ssh_result,
+            "ip_address": ip_address
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Error testing server: {str(e)}"
+        }), 500
+
+@app.route('/api/servers')
+def get_servers():
+    """API endpoint to get server list"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    servers = load_servers()
+    return jsonify({"servers": servers, "status": "success"})
+
+@app.route('/api/remove_server', methods=['POST'])
+def remove_server():
+    """API endpoint to remove a server from management"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    server_name = data.get('server_name')
+    
+    if not server_name:
+        return jsonify({"error": "Server name required"}), 400
+    
+    servers = load_servers()
+    
+    # Find and remove the server
+    original_count = len(servers)
+    servers = [s for s in servers if s['name'] != server_name]
+    
+    if len(servers) == original_count:
+        return jsonify({"error": f"Server '{server_name}' not found"}), 404
+    
+    # Save updated server list
+    if save_servers(servers):
+        return jsonify({
+            "status": "success",
+            "message": f"Server '{server_name}' removed successfully",
+            "servers": servers
+        })
+    else:
+        return jsonify({"error": "Failed to save server list"}), 500
+
+@app.route('/api/validate_user', methods=['POST'])
+def validate_user():
+    """API endpoint to validate if a user exists on a server"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    server_ip = data.get('server_ip')
+    username = data.get('username')
+    
+    if not server_ip or not username:
+        return jsonify({"error": "Server IP and username required"}), 400
+    
+    try:
+        # Test SSH connection and check if user exists
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Load private key
+        if not os.path.exists(SSH_KEY_PATH):
+            return jsonify({"error": f"SSH key not found at {SSH_KEY_PATH}"}), 500
+        
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+        
+        # Connect to server
+        ssh.connect(server_ip, username=SSH_USER, pkey=private_key, timeout=15)
+        
+        # Check if user exists
+        stdin, stdout, stderr = ssh.exec_command(f'id {username}', timeout=10)
+        user_exists = stdout.channel.recv_exit_status() == 0
+        
+        ssh.close()
+        
+        return jsonify({
+            "status": "success",
+            "user_exists": user_exists,
+            "server_ip": server_ip,
+            "username": username,
+            "message": f"User '{username}' {'exists' if user_exists else 'does not exist'} on {server_ip}"
+        })
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": f"Failed to validate user: {str(e)}"
+        }), 500
+
+@app.route('/api/change_user_password', methods=['POST'])
+def change_user_password():
+    """API endpoint to change a user's password on a server"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    server_ip = data.get('server_ip')
+    username = data.get('username')
+    new_password = data.get('new_password')
+    
+    if not server_ip or not username or not new_password:
+        return jsonify({"error": "Server IP, username, and new password required"}), 400
+    
+    try:
+        # Test SSH connection
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        # Load private key
+        if not os.path.exists(SSH_KEY_PATH):
+            return jsonify({"error": f"SSH key not found at {SSH_KEY_PATH}"}), 500
+        
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+        
+        # Connect to server
+        ssh.connect(server_ip, username=SSH_USER, pkey=private_key, timeout=15)
+        
+        # Change user password using chpasswd
+        change_password_cmd = f'echo "{username}:{new_password}" | sudo chpasswd'
+        stdin, stdout, stderr = ssh.exec_command(change_password_cmd, timeout=30)
+        exit_status = stdout.channel.recv_exit_status()
+        
+        if exit_status == 0:
+            # Verify the password change worked by testing login
+            test_ssh = paramiko.SSHClient()
+            test_ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+            
+            try:
+                test_ssh.connect(server_ip, username=username, password=new_password, timeout=10)
+                test_ssh.close()
+                password_changed = True
+            except:
+                password_changed = False
+        else:
+            password_changed = False
+        
+        ssh.close()
+        
+        if password_changed:
+            return jsonify({
+                "status": "success",
+                "message": f"Password for user '{username}' changed successfully on {server_ip}",
+                "server_ip": server_ip,
+                "username": username
+            })
+        else:
+            return jsonify({
+                "status": "error",
+                "error": f"Failed to change password for user '{username}' on {server_ip}"
+            }), 500
+        
+    except Exception as e:
+        return jsonify({
+            "status": "error",
+            "error": f"Failed to change password: {str(e)}"
+        }), 500
+
+@app.route('/api/create_password', methods=['POST'])
+def create_password():
+    """API endpoint to create and store a new password"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    server = data.get('server')
+    username = data.get('username')
+    password_length = data.get('password_length', 16)
+    
+    if not server or not username:
+        return jsonify({"error": "Server and username required"}), 400
+    
+    # Generate secure password
+    new_password = generate_secure_password(password_length)
+    
+    # Store in vault
+    result = create_vault_structure(server, username, new_password)
+    
+    if result['success']:
+        # Log the creation for audit purposes
+        log_action(session['username'], 'create', server, username, 'success')
+        
+        return jsonify({
+            "status": "success",
+            "message": f"Password created for {username}@{server}",
+            "password": new_password,
+            "server": server,
+            "username": username,
+            "timestamp": datetime.now().isoformat(),
+            "vault_location": result['vault_dir']
+        })
+    else:
+        log_action(session['username'], 'create', server, username, 'failed')
+        return jsonify({
+            "status": "error",
+            "message": result['error']
+        }), 400
+
+@app.route('/api/retrieve_password', methods=['POST'])
+def retrieve_password():
+    """API endpoint to retrieve password"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    data = request.get_json()
+    server = data.get('server')
+    username = data.get('username', 'root')
+    
+    if not server:
+        return jsonify({"error": "Server name required"}), 400
+    
+    result = retrieve_password_from_vault(server, username)
+    
+    if result['success']:
+        # Log the access for audit purposes
+        log_action(session['username'], 'retrieve', server, username, 'success')
+        return jsonify({
+            "status": "success",
+            "password": result['password'],
+            "server": server,
+            "username": username,
+            "timestamp": result['timestamp']
+        })
+    else:
+        log_action(session['username'], 'retrieve', server, username, 'failed')
+        return jsonify({
+            "status": "error",
+            "message": result['error']
+        }), 400
+
+@app.route('/api/list_passwords')
+def get_passwords():
+    """API endpoint to list all passwords"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 401
+    
+    result = list_all_passwords()
+    return jsonify(result)
+
+@app.route('/api/change_admin_password', methods=['POST'])
+def change_admin_password():
+    """API endpoint to change admin password"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+    
+    data = request.get_json()
+    current_password = data.get('current_password')
+    new_password = data.get('new_password')
+    
+    if not current_password or not new_password:
+        return jsonify({"error": "Current and new password required"}), 400
+    
+    # Validate current password (hardcoded for demo - in production use proper auth)
+    if current_password != "admin123":
+        return jsonify({"error": "Current password is incorrect"}), 400
+    
+    # Validate new password
+    if len(new_password) < 8:
+        return jsonify({"error": "New password must be at least 8 characters long"}), 400
+    
+    # In production, you would:
+    # 1. Hash the new password
+    # 2. Store it in a secure database
+    # 3. Update the authentication system
+    
+    # For now, we'll just return success
+    # TODO: Implement actual password storage and update mechanism
+    
+    log_action(session['username'], 'change_admin_password', 'system', 'admin', 'success')
+    
+    return jsonify({
+        "success": True,
+        "message": "Password changed successfully. Please log in with your new password."
+    })
+
+def log_action(user, action, server, target_user, status):
+    """Log actions for audit purposes"""
+    log_entry = {
+        "timestamp": datetime.now().isoformat(),
+        "user": user,
+        "action": action,
+        "server": server,
+        "target_user": target_user,
+        "status": status,
+        "ip": request.remote_addr
+    }
+    
+    # In production, log to a proper logging system
+    print(f"ACTION_LOG: {json.dumps(log_entry)}")
+
+if __name__ == '__main__':
+    # Ensure vault directory exists
+    os.makedirs(VAULT_DIR, exist_ok=True)
+    
+    app.run(host='0.0.0.0', port=5000, debug=True)

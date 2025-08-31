@@ -1,0 +1,3015 @@
+<!DOCTYPE html>
+<html lang="en" data-bs-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <title>Lockr - Enterprise Server & Password Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --warning-color: #ffc107;
+            --info-color: #17a2b8;
+        }
+        
+        [data-bs-theme="dark"] {
+            --bs-body-bg: #1a1a1a;
+            --bs-body-color: #e9ecef;
+            --bs-card-bg: #2d2d2d;
+            --bs-border-color: #495057;
+        }
+        
+        [data-bs-theme="dark"] .sidebar {
+            background: #2d2d2d;
+            border-right: 1px solid #495057;
+        }
+        
+        [data-bs-theme="dark"] .sidebar .border-top {
+            border-color: #495057 !important;
+        }
+        
+        [data-bs-theme="dark"] .version-display:hover {
+            color: #6c757d !important;
+        }
+        
+        [data-bs-theme="dark"] .card {
+            background: #2d2d2d;
+            border: 1px solid #495057;
+        }
+        
+        [data-bs-theme="dark"] .card-header {
+            background: #343a40 !important;
+            border-bottom: 1px solid #495057;
+        }
+        
+        [data-bs-theme="dark"] .form-control {
+            background: #343a40;
+            border-color: #495057;
+            color: #e9ecef;
+        }
+        
+        [data-bs-theme="dark"] .form-control:focus {
+            background: #343a40;
+            color: #e9ecef;
+        }
+        
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        [data-bs-theme="dark"] body {
+            background-color: #1a1a1a;
+        }
+        
+        .navbar {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .sidebar {
+            background: white;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            min-height: calc(100vh - 56px);
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .position-sticky {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .sidebar .nav {
+            flex: 1;
+        }
+        
+        .sidebar .mt-auto {
+            margin-top: auto !important;
+        }
+        
+        .version-display {
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .version-display:hover {
+            color: var(--primary-color) !important;
+            transform: scale(1.05);
+        }
+        
+        .sidebar .nav-link {
+            color: #6c757d;
+            border-radius: 10px;
+            margin: 0.25rem 0;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar .nav-link:hover,
+        .sidebar .nav-link.active {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        
+        .main-content {
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+        
+        .card {
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease, all 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+        }
+        
+        .server-card {
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .server-card.offline {
+            border-left-color: var(--danger-color);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1.5rem;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+        
+        .btn-success {
+            background: linear-gradient(135deg, var(--success-color) 0%, #20c997 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1.5rem;
+        }
+        
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(40, 167, 69, 0.3);
+        }
+        
+        .btn-info {
+            background: linear-gradient(135deg, var(--info-color) 0%, #138496 100%);
+            border: none;
+            border-radius: 10px;
+            padding: 0.5rem 1.5rem;
+        }
+        
+        .btn-info:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(23, 162, 184, 0.3);
+        }
+        
+        .modal-content {
+            border-radius: 15px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+        
+        [data-bs-theme="dark"] .modal-content {
+            background: #2d2d2d;
+            color: #e9ecef;
+        }
+        
+        .form-control {
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+        
+        .status-online {
+            background-color: var(--success-color);
+            color: white;
+        }
+        
+        .status-offline {
+            background-color: var(--danger-color);
+            color: white;
+        }
+        
+        .status-connecting {
+            background-color: var(--warning-color);
+            color: white;
+        }
+        
+        .theme-toggle {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 0.5rem 1rem;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            transform: scale(1.05);
+        }
+        
+        .theme-toggle i {
+            margin-right: 0.5rem;
+        }
+        
+        .password-display {
+            background: #f8f9fa;
+            border: 2px solid var(--success-color);
+            border-radius: 10px;
+            padding: 1rem;
+            font-family: 'Courier New', monospace;
+            font-size: 1.1rem;
+            text-align: center;
+            margin: 1rem 0;
+        }
+        
+        [data-bs-theme="dark"] .password-display {
+            background: #343a40;
+            border-color: var(--success-color);
+        }
+        
+        .copy-btn {
+            background: var(--success-color);
+            border: none;
+            border-radius: 5px;
+            color: white;
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        
+        .copy-btn:hover {
+            background: #218838;
+            color: white;
+        }
+        
+        .server-status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        
+        .status-indicator-online {
+            background-color: var(--success-color);
+        }
+        
+        .status-indicator-offline {
+            background-color: var(--danger-color);
+        }
+        
+        .status-indicator-connecting {
+            background-color: var(--warning-color);
+        }
+        
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="#" onclick="showDashboardOverview()">
+                <i class="fas fa-lock me-2"></i>
+                <strong>Lockr</strong>
+                <small class="ms-2 text-white-50">Enterprise</small>
+            </a>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user me-1"></i>
+                    Welcome, {{ session.username }}
+                </span>
+                <button class="btn theme-toggle me-3" onclick="toggleTheme()" data-bs-theme="light">
+                    <i class="fas fa-sun"></i>
+                    <span class="theme-text">Light</span>
+                </button>
+                <button class="btn btn-outline-warning me-3" onclick="showChangePasswordModal()">
+                    <i class="fas fa-key me-1"></i>
+                    Change Password
+                </button>
+                <a class="nav-link" href="/logout">
+                    <i class="fas fa-sign-out-alt me-1"></i>
+                    Logout
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block sidebar">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#" onclick="showDashboardOverview()">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showServerManagement()">
+                                <i class="fas fa-server me-2"></i>
+                                Manage Servers
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showCreatePasswordSection()">
+                                <i class="fas fa-plus-circle me-2"></i>
+                                Add Account
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showRetrievePasswordSection()">
+                                <i class="fas fa-key me-2"></i>
+                                Retrieve Password
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showManagePasswordsSection()">
+                                <i class="fas fa-list me-2"></i>
+                                Manage Passwords
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showVersionsSection()">
+                                <i class="fas fa-code-branch me-2"></i>
+                                Versions
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#" onclick="showHelpSection()">
+                                <i class="fas fa-question-circle me-2"></i>
+                                Help
+                            </a>
+                        </li>
+                    </ul>
+                    
+                    <!-- Version Information -->
+                    <div class="mt-auto pt-3 border-top">
+                        <div class="text-center">
+                            <small class="text-muted version-display">
+                                <i class="fas fa-tag me-1"></i>
+                                Lockr v0.91
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 main-content">
+                <!-- Help Section -->
+                <div class="row mb-4" id="helpSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-question-circle me-2"></i>
+                                    Lockr Enterprise - System Overview & Help
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary"><i class="fas fa-shield-alt me-2"></i>What is Lockr?</h6>
+                                        <p>Lockr is an enterprise-grade server and password management platform that combines the power of Ansible automation with secure password storage and retrieval. It's designed for Linux administrators who need to manage multiple servers and maintain secure access credentials.</p>
+                                        
+                                        <h6 class="text-success"><i class="fas fa-server me-2"></i>Server Management</h6>
+                                        <ul>
+                                            <li><strong>Automated Server Provisioning:</strong> Add new servers with automated SSH key deployment and user setup</li>
+                                            <li><strong>Real-time Status Monitoring:</strong> Track server connectivity and health status</li>
+                                            <li><strong>Bulk Operations:</strong> Perform operations across multiple servers simultaneously</li>
+                                            <li><strong>SSH Integration:</strong> Seamless integration with your existing SSH key infrastructure</li>
+                                        </ul>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <h6 class="text-warning"><i class="fas fa-lock me-2"></i>Password Security</h6>
+                                        <ul>
+                                            <li><strong>Ansible Vault Integration:</strong> Military-grade encryption for all stored passwords</li>
+                                            <li><strong>Secure Generation:</strong> Cryptographically secure random password generation</li>
+                                            <li><strong>User Validation:</strong> Verify user existence on remote servers before password operations</li>
+                                            <li><strong>Live Password Changes:</strong> Change passwords on remote servers via SSH</li>
+                                        </ul>
+                                        
+                                                                            <h6 class="text-info"><i class="fas fa-cogs me-2"></i>Key Features</h6>
+                                    <ul>
+                                        <li><strong>Web-based Interface:</strong> Professional, responsive dashboard accessible from any device</li>
+                                        <li><strong>Role-based Access:</strong> Secure authentication with user management</li>
+                                        <li><strong>Audit Logging:</strong> Track all password and server operations</li>
+                                        <li><strong>API Integration:</strong> RESTful API for automation and integration</li>
+                                        <li><strong>Service Management:</strong> Professional systemd service with easy control commands</li>
+                                    </ul>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="text-primary"><i class="fas fa-play me-2"></i>Quick Start Guide</h6>
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="card border-primary">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-plus-circle fa-2x text-primary mb-2"></i>
+                                                    <h6>1. Add Servers</h6>
+                                                    <p class="small">Use "Manage Servers" to add new servers to your infrastructure</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-success">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-key fa-2x text-success mb-2"></i>
+                                                    <h6>2. Create Accounts</h6>
+                                                    <p class="small">Generate secure passwords for users on your servers</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="card border-warning">
+                                                <div class="card-body text-center">
+                                                    <i class="fas fa-database fa-2x text-warning mb-2"></i>
+                                                    <h6>3. Manage Access</h6>
+                                                    <p class="small">Retrieve and update passwords as needed</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="text-primary"><i class="fas fa-server me-2"></i>Service Management Commands</h6>
+                                    <p class="text-muted">Use these commands from the <code>/home/brian/Cursor/Password-Manager</code> directory to manage the Lockr service.</p>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <h6 class="text-success"><i class="fas fa-play me-2"></i>Basic Control</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Command</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh start</code></td>
+                                                            <td>Start the Lockr service</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh stop</code></td>
+                                                            <td>Stop the Lockr service</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh restart</code></td>
+                                                            <td>Restart the Lockr service</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh status</code></td>
+                                                            <td>Show service status</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-info"><i class="fas fa-eye me-2"></i>Monitoring & Logs</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Command</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh logs</code></td>
+                                                            <td>Follow service logs in real-time</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh logs-n 100</code></td>
+                                                            <td>Show last 100 log lines</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh info</code></td>
+                                                            <td>Show comprehensive service information</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mt-3">
+                                        <div class="col-md-6">
+                                            <h6 class="text-warning"><i class="fas fa-cog me-2"></i>Boot Configuration</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Command</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh enable</code></td>
+                                                            <td>Enable auto-start on boot</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh disable</code></td>
+                                                            <td>Disable auto-start on boot</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <h6 class="text-danger"><i class="fas fa-tools me-2"></i>Installation</h6>
+                                            <div class="table-responsive">
+                                                <table class="table table-sm table-bordered">
+                                                    <thead class="table-light">
+                                                        <tr>
+                                                            <th>Command</th>
+                                                            <th>Description</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh install</code></td>
+                                                            <td>Install as systemd service</td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><code>./manage_lockr_service.sh uninstall</code></td>
+                                                            <td>Remove systemd service</td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="alert alert-info mt-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        <strong>Pro Tip:</strong> You can also use standard systemd commands like <code>sudo systemctl start lockr</code>, <code>sudo systemctl status lockr</code>, and <code>sudo journalctl -u lockr -f</code> for direct system control.
+                                    </div>
+                                </div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Versions Section -->
+                <div class="row mb-4" id="versionsSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-secondary text-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-code-branch me-2"></i>
+                                    System Versions & Components
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <h6 class="text-primary"><i class="fas fa-server me-2"></i>Core System</h6>
+                                        <table class="table table-sm">
+                                            <tbody>
+                                                <tr>
+                                                    <td><strong>Lockr Version:</strong></td>
+                                                    <td><span class="badge bg-primary">0.91</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Python Version:</strong></td>
+                                                    <td><span class="badge bg-info">3.12.3</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Flask Version:</strong></td>
+                                                    <td><span class="badge bg-success">3.0.0</span></td>
+                                                </tr>
+                                                <tr>
+                                                    <td><strong>Paramiko Version:</strong></td>
+                                                    <td><span class="badge bg-warning">3.4.0</span></td>
+                                                </tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="col-md-6">
+                                                                            <h6 class="text-success"><i class="fas fa-tools me-2"></i>Dependencies</h6>
+                                    <table class="table table-sm">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Ansible Vault:</strong></td>
+                                                <td><span class="badge bg-success">Integrated</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>SSH Support:</strong></td>
+                                                <td><span class="badge bg-success">Ed25519/RSA</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Encryption:</strong></td>
+                                                <td><span class="badge bg-success">AES-256</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Database:</strong></td>
+                                                <td><span class="badge bg-info">JSON + Vault</span></td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Service Management:</strong></td>
+                                                <td><span class="badge bg-warning">Systemd + Scripts</span></td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    </div>
+                                </div>
+                                
+                                <hr class="my-4">
+                                
+                                <div class="row">
+                                    <div class="col-12">
+                                        <h6 class="text-primary"><i class="fas fa-history me-2"></i>Release Notes</h6>
+                                        <div class="accordion" id="releaseNotes">
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v091">
+                                                        Version 0.91 - Current Release
+                                                    </button>
+                                                </h2>
+                                                <div id="v091" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>Features:</strong>
+                                                        <ul>
+                                                            <li>Enterprise server management dashboard</li>
+                                                            <li>Secure password generation and storage with Ansible Vault</li>
+                                                            <li>SSH-based server provisioning and management</li>
+                                                            <li>User validation and live password changes</li>
+                                                            <li>Professional web interface with light/dark themes</li>
+                                                            <li>Comprehensive audit logging</li>
+                                                            <li>Help and documentation system</li>
+                                                            <li>Version tracking and changelog</li>
+                                                            <li>Systemd service integration</li>
+                                                            <li>Automatic startup and background operation</li>
+                                                            <li>Production-ready service management</li>
+                                                        </ul>
+                                                        <strong>Security:</strong>
+                                                        <ul>
+                                                            <li>Military-grade encryption for all stored data</li>
+                                                            <li>SSH key-based authentication</li>
+                                                            <li>Secure password generation algorithms</li>
+                                                            <li>Audit trail for all operations</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v08">
+                                                        Version 0.8 - Previous Release
+                                                    </button>
+                                                </h2>
+                                                <div id="v08" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>Features:</strong>
+                                                        <ul>
+                                                            <li>Basic server management dashboard</li>
+                                                            <li>Password creation and retrieval</li>
+                                                            <li>SSH server provisioning</li>
+                                                            <li>Light/dark theme support</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Stats Cards -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Total Servers
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold">{{ total_servers }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-server fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Online Servers
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold">{{ online_servers }}</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-wifi fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Stored Passwords
+                                        </div>
+                                        <div class="h5 mb-0 font-weight-bold" id="passwordCount">-</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-lock fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card stat-card">
+                            <div class="card-body">
+                                <div class="row no-gutters align-items-center">
+                                    <div class="col mr-2">
+                                        <div class="text-xs font-weight-bold text-uppercase mb-1">
+                                            Last Update
+                                        </div>
+                                        <div class="h6 mb-0 font-weight-bold">2 min ago</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-bolt me-2"></i>
+                                    Quick Actions
+                                </h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <button class="btn btn-info me-2 mb-2" data-bs-toggle="modal" data-bs-target="#addServerModal">
+                                            <i class="fas fa-plus me-1"></i>
+                                            Add New Server
+                                        </button>
+                                        <button class="btn btn-success me-2 mb-2" data-bs-toggle="modal" data-bs-target="#createPasswordModal">
+                                            <i class="fas fa-plus-circle me-1"></i>
+                                            Add Account
+                                        </button>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <button class="btn btn-primary me-2 mb-2" data-bs-toggle="modal" data-bs-target="#retrievePasswordModal">
+                                            <i class="fas fa-key me-1"></i>
+                                            View Password
+                                        </button>
+                                        <button class="btn btn-outline-info mb-2" onclick="listAllPasswords()">
+                                            <i class="fas fa-list me-1"></i>
+                                            View All Passwords
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Server Management Section -->
+                <div class="row mb-4" id="serverManagementSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-server me-2"></i>
+                                    Server Management
+                                </h5>
+                                <div>
+                                    <button class="btn btn-sm btn-outline-primary me-2" onclick="refreshServerManagement()">
+                                        <i class="fas fa-sync-alt me-1"></i>
+                                        Refresh List
+                                    </button>
+                                    <button class="btn btn-sm btn-success" onclick="showAddServerForm()">
+                                        <i class="fas fa-plus me-1"></i>
+                                        Add New Server
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <!-- Server Statistics -->
+                                <div class="row mb-4">
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 border rounded">
+                                            <h4 class="text-primary" id="totalServersCount">{{ total_servers }}</h4>
+                                            <small class="text-muted">Total Servers</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 border rounded">
+                                            <h4 class="text-success" id="onlineServersCount">{{ online_servers }}</h4>
+                                            <small class="text-muted">Online Servers</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 border rounded">
+                                            <h4 class="text-warning" id="pendingServersCount">0</h4>
+                                            <small class="text-muted">Pending Setup</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="text-center p-3 border rounded">
+                                            <h4 class="text-info" id="managedPasswordsCount">0</h4>
+                                            <small class="text-muted">Managed Passwords</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Bulk Operations -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <div class="card border-info">
+                                            <div class="card-header bg-info text-white">
+                                                <h6 class="mb-0">
+                                                    <i class="fas fa-tasks me-2"></i>
+                                                    Bulk Operations
+                                                </h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <button class="btn btn-outline-success w-100 mb-2" onclick="bulkCreateRootPasswords()">
+                                                            <i class="fas fa-plus me-1"></i>
+                                                            Add Accounts
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <button class="btn btn-outline-info w-100 mb-2" onclick="bulkHealthCheck()">
+                                                            <i class="fas fa-heartbeat me-1"></i>
+                                                            Health Check
+                                                        </button>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <button class="btn btn-outline-warning w-100 mb-2" onclick="exportServerList()">
+                                                            <i class="fas fa-download me-1"></i>
+                                                            Export List
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Server List -->
+                                <div class="table-responsive">
+                                    <table class="table table-hover">
+                                        <thead class="table-light">
+                                            <tr>
+                                                <th>Server Name</th>
+                                                <th>IP Address</th>
+                                                <th>Status</th>
+                                                <th>SSH Status</th>
+                                                <th>Last Access</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="serverTableBody">
+                                            {% for server in servers %}
+                                            <tr>
+                                                <td>
+                                                    <strong>{{ server.name }}</strong>
+                                                    {% if server.setup_date %}
+                                                    <br><small class="text-muted">Setup: {{ server.setup_date[:10] }}</small>
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    <code>{{ server.ip }}</code>
+                                                    <button class="btn btn-sm btn-outline-secondary ms-2" onclick="copyToClipboard('{{ server.ip }}')">
+                                                        <i class="fas fa-copy"></i>
+                                                    </button>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if server.status == 'online' else 'danger' }}">
+                                                        {{ server.status }}
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-{{ 'success' if server.ssh_status == 'connected' else 'warning' }}">
+                                                        {{ server.ssh_status or 'Unknown' }}
+                                                    </span>
+                                                </td>
+                                                <td>{{ server.last_access }}</td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                                                                            <button class="btn btn-sm btn-outline-primary" onclick="showResult('Server Info', 'Connection testing removed for simplicity')">
+                                                        <i class="fas fa-info-circle"></i>
+                                                    </button>
+                                                        <button class="btn btn-sm btn-outline-success" onclick="createPassword('{{ server.name }}', '')">
+                                                            <i class="fas fa-plus"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-info" onclick="showServerPasswords('{{ server.name }}')">
+                                                            <i class="fas fa-list"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-warning" onclick="editServer('{{ server.name }}')">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-danger" onclick="removeServer('{{ server.name }}')">
+                                                            <i class="fas fa-trash"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Section -->
+                <div class="row mb-4" id="serverOverviewSection">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-tachometer-alt me-2"></i>
+                                    Dashboard Overview
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshServerStatus()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Refresh Status
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div class="row">
+                                    {% for server in servers %}
+                                    <div class="col-md-4 mb-3">
+                                        <div class="card server-card {{ 'offline' if server.status == 'offline' else '' }}">
+                                            <div class="card-body">
+                                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                                    <h6 class="card-title mb-0">
+                                                        <span class="server-status-indicator status-indicator-{{ server.status }}"></span>
+                                                        {{ server.name }}
+                                                    </h6>
+                                                    <span class="status-badge status-{{ server.status }}">
+                                                        {{ server.status }}
+                                                    </span>
+                                                </div>
+                                                <p class="card-text text-muted mb-2">
+                                                    <i class="fas fa-network-wired me-1"></i>
+                                                    {{ server.ip }}
+                                                </p>
+                                                <p class="card-text text-muted mb-2">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Last access: {{ server.last_access }}
+                                                </p>
+                                                {% if server.ssh_status %}
+                                                <p class="card-text text-muted mb-3">
+                                                    <i class="fas fa-terminal me-1"></i>
+                                                    SSH: {{ server.ssh_status }}
+                                                </p>
+                                                {% endif %}
+                                                <div class="btn-group w-100" role="group">
+                                                    <button class="btn btn-sm btn-success" onclick="createPassword('{{ server.name }}', '')">
+                                                        <i class="fas fa-plus me-1"></i>
+                                                        Add Account
+                                                    </button>
+                                                    <button class="btn btn-sm btn-primary" onclick="retrievePassword('{{ server.name }}', '')">
+                                                        <i class="fas fa-key me-1"></i>
+                                                        View Password
+                                                    </button>
+                                                    <button class="btn btn-sm btn-outline-info" onclick="showServerPasswords('{{ server.name }}')">
+                                                        <i class="fas fa-list me-1"></i>
+                                                        All Users
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Create Password Section -->
+                <div class="row mb-4" id="createPasswordSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-plus-circle me-2"></i>
+                                    Add New Account
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshServerDropdowns()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Refresh Servers
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <form id="createPasswordFormInline">
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="createServerSelectInline" class="form-label">Server</label>
+                                                <select class="form-select" id="createServerSelectInline" required>
+                                                    <option value="">Select a server...</option>
+                                                    {% for server in servers %}
+                                                    <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="createUsernameInputInline" class="form-label">Username</label>
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control" id="createUsernameInputInline" value="root" required>
+                                                    <button type="button" class="btn btn-outline-info" onclick="validateUserOnServerInline()">
+                                                        <i class="fas fa-check me-1"></i>
+                                                        Validate
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="mb-3">
+                                                <label for="passwordLengthInputInline" class="form-label">Password Length</label>
+                                                <input type="number" class="form-control" id="passwordLengthInputInline" value="16" min="8" max="64">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="userValidationResultInline" class="mb-3" style="display: none;">
+                                        <!-- User validation result will be shown here -->
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-success btn-lg" onclick="createNewPasswordInline()">
+                                            <i class="fas fa-plus me-2"></i>
+                                            Add Account
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Retrieve Password Section -->
+                <div class="row mb-4" id="retrievePasswordSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-key me-2"></i>
+                                    Retrieve Password
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshServerDropdowns()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Refresh Servers
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <form id="retrievePasswordFormInline">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="retrieveServerSelectInline" class="form-label">Server</label>
+                                                <select class="form-select" id="retrieveServerSelectInline" required>
+                                                    <option value="">Select a server...</option>
+                                                    {% for server in servers %}
+                                                    <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="mb-3">
+                                                <label for="retrieveUsernameInputInline" class="form-label">Username</label>
+                                                <input type="text" class="form-control" id="retrieveUsernameInputInline" value="root" required>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-center">
+                                        <button type="button" class="btn btn-primary btn-lg" onclick="retrieveExistingPasswordInline()">
+                                            <i class="fas fa-key me-2"></i>
+                                            Retrieve Password
+                                        </button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Manage Passwords Section -->
+                <div class="row mb-4" id="managePasswordsSection" style="display: none;">
+                    <div class="col-12">
+                        <div class="card">
+                            <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                                <h5 class="card-title mb-0">
+                                    <i class="fas fa-list me-2"></i>
+                                    Manage Passwords
+                                </h5>
+                                <button class="btn btn-sm btn-outline-primary" onclick="refreshPasswordList()">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Refresh List
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <div id="passwordListContainer">
+                                    <div class="text-center">
+                                        <div class="spinner-border" role="status">
+                                            <span class="visually-hidden">Loading...</span>
+                                        </div>
+                                        <p class="mt-2">Loading passwords...</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Add Server Modal -->
+    <div class="modal fade" id="addServerModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus me-2"></i>
+                        Add New Server
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addServerForm" onsubmit="event.preventDefault(); return false;">
+                        <div class="mb-3">
+                            <label for="serverHostname" class="form-label">Server Hostname</label>
+                            <input type="text" class="form-control" id="serverHostname" placeholder="e.g., webserver, database">
+                            <small class="form-text text-muted">Optional - can be added later</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="serverIP" class="form-label">IP Address *</label>
+                            <input type="text" class="form-control" id="serverIP" placeholder="192.168.1.100" required>
+                            <small class="form-text text-muted">Required for connectivity testing</small>
+                        </div>
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <button type="button" class="btn btn-outline-secondary" onclick="testFormFields()">
+                                    <i class="fas fa-check me-1"></i>
+                                    Test Form
+                                </button>
+                                <button type="button" class="btn btn-outline-warning" onclick="validateAndSubmit()">
+                                    <i class="fas fa-play me-1"></i>
+                                    Test Submit
+                                </button>
+                            </div>
+                            <div class="mt-2">
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Use "Test Form" to verify fields, "Test Submit" to validate, then "Add Server" to proceed
+                                </small>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <div class="me-auto">
+                        <small class="text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Tip: You can test connectivity with just an IP address
+                        </small>
+                    </div>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-info" onclick="addNewServer()" id="addServerBtn">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Server
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Password Modal -->
+    <div class="modal fade" id="createPasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Add New Account
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="createPasswordForm">
+                        <div class="mb-3">
+                            <label for="createServerSelect" class="form-label">Server</label>
+                            <select class="form-select" id="createServerSelect" required>
+                                <option value="">Select a server...</option>
+                                {% for server in servers %}
+                                <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="createUsernameInput" class="form-label">Username</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="createUsernameInput" value="root" required>
+                                <button type="button" class="btn btn-outline-info" onclick="validateUserOnServer()">
+                                    <i class="fas fa-check me-1"></i>
+                                    Validate User
+                                </button>
+                            </div>
+                            <small class="form-text text-muted">Enter username and click "Validate User" to check if it exists on the server</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="passwordLengthInput" class="form-label">Password Length</label>
+                            <input type="number" class="form-control" id="passwordLengthInput" value="16" min="8" max="64">
+                            <small class="form-text text-muted">Minimum 8, maximum 64 characters</small>
+                        </div>
+                        <div id="userValidationResult" class="mb-3" style="display: none;">
+                            <!-- User validation result will be shown here -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-success" onclick="createNewPassword()">
+                        <i class="fas fa-plus me-1"></i>
+                        Add Account
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Retrieve Password Modal -->
+    <div class="modal fade" id="retrievePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>
+                        Retrieve Password
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="retrievePasswordForm">
+                        <div class="mb-3">
+                            <label for="retrieveServerSelect" class="form-label">Server</label>
+                            <select class="form-select" id="retrieveServerSelect" required>
+                                <option value="">Select a server...</option>
+                                {% for server in servers %}
+                                <option value="{{ server.name }}">{{ server.name }} ({{ server.ip }})</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="retrieveUsernameInput" class="form-label">Username</label>
+                            <input type="text" class="form-control" id="retrieveUsernameInput" value="root" required>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="retrieveExistingPassword()">
+                        <i class="fas fa-search me-1"></i>
+                        Retrieve
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal -->
+    <div class="modal fade" id="resultModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="resultModalTitle">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Result
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body" id="resultModalBody">
+                    <!-- Content will be populated by JavaScript -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-key me-2"></i>
+                        Change Admin Password
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label for="currentPasswordInput" class="form-label">Current Password</label>
+                            <input type="password" class="form-control" id="currentPasswordInput" required>
+                            <small class="form-text text-muted">Enter your current password to verify your identity</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="newPasswordInput" class="form-label">New Password</label>
+                            <input type="password" class="form-control" id="newPasswordInput" required>
+                            <small class="form-text text-muted">Enter your new password (minimum 8 characters)</small>
+                        </div>
+                        <div class="mb-3">
+                            <label for="confirmPasswordInput" class="form-label">Confirm New Password</label>
+                            <input type="password" class="form-control" id="confirmPasswordInput" required>
+                            <small class="form-text text-muted">Re-enter your new password to confirm</small>
+                        </div>
+                        <div id="passwordChangeResult" class="mb-3" style="display: none;">
+                            <!-- Password change result will be shown here -->
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-warning" onclick="changeAdminPassword()">
+                        <i class="fas fa-key me-1"></i>
+                        Change Password
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme management
+        let currentTheme = localStorage.getItem('theme') || 'light';
+        
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            setTheme(currentTheme);
+            loadPasswordCount();
+            
+            // Show dashboard overview by default
+            showDashboardOverview();
+        });
+        
+        // Toggle theme function
+        function toggleTheme() {
+            currentTheme = currentTheme === 'light' ? 'dark' : 'light';
+            setTheme(currentTheme);
+            localStorage.setItem('theme', currentTheme);
+        }
+        
+        // Set theme function
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-bs-theme', theme);
+            const themeToggle = document.querySelector('.theme-toggle');
+            const themeText = themeToggle.querySelector('.theme-text');
+            const themeIcon = themeToggle.querySelector('i');
+            
+            if (theme === 'dark') {
+                themeToggle.setAttribute('data-bs-theme', 'dark');
+                themeText.textContent = 'Dark';
+                themeIcon.className = 'fas fa-moon';
+            } else {
+                themeToggle.setAttribute('data-bs-theme', 'light');
+                themeText.textContent = 'Light';
+                themeIcon.className = 'fas fa-sun';
+            }
+        }
+        
+        // Load password count
+        function loadPasswordCount() {
+            fetch('/api/list_passwords')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('passwordCount').textContent = data.passwords.length;
+                }
+            });
+        }
+        
+        // Test form fields
+        function testFormFields() {
+            const hostnameField = document.getElementById('serverHostname');
+            const ipField = document.getElementById('serverIP');
+            
+            if (!hostnameField || !ipField) {
+                alert('Form fields not found. Please refresh the page.');
+                return;
+            }
+            
+            const hostname = hostnameField.value.trim();
+            const ip = ipField.value.trim();
+            
+            let message = 'Form Field Test Results:\n\n';
+            message += `Hostname Field: ${hostnameField ? 'Found' : 'Missing'}\n`;
+            message += `IP Field: ${ipField ? 'Found' : 'Missing'}\n`;
+            message += `Hostname Value: "${hostname}"\n`;
+            message += `IP Value: "${ip}"\n`;
+            message += `IP Length: ${ip.length}\n`;
+            
+            alert(message);
+            console.log('Form test:', { hostnameField, ipField, hostname, ip });
+        }
+        
+        // Validate and submit test
+        function validateAndSubmit() {
+            console.log('validateAndSubmit called');
+            
+            const hostnameField = document.getElementById('serverHostname');
+            const ipField = document.getElementById('serverIP');
+            
+            if (!hostnameField || !ipField) {
+                alert('Form fields not found. Please refresh the page.');
+                return;
+            }
+            
+            const hostname = hostnameField.value.trim();
+            const ip = ipField.value.trim();
+            
+            console.log('Validation test values:', { hostname, ip, hostnameLength: hostname.length, ipLength: ip.length });
+            
+            if (!ip || ip.length === 0) {
+                alert('IP address is required. Please enter a valid IP address.');
+                ipField.focus();
+                return;
+            }
+            
+            // Basic IP format validation
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipRegex.test(ip)) {
+                alert('Please enter a valid IP address format (e.g., 10.10.10.42)');
+                ipField.focus();
+                return;
+            }
+            
+            alert(`Validation passed!\n\nHostname: "${hostname}"\nIP: "${ip}"\n\nReady to submit to server.`);
+        }
+        
+
+        
+        // Add new server
+        function addNewServer() {
+            console.log('addNewServer function called');
+            
+            const hostnameField = document.getElementById('serverHostname');
+            const ipField = document.getElementById('serverIP');
+            
+            console.log('Form fields found:', { hostnameField, ipField });
+            
+            if (!hostnameField || !ipField) {
+                console.error('Form fields not found:', { hostnameField, ipField });
+                alert('Form fields not found. Please refresh the page.');
+                return;
+            }
+            
+            const hostname = hostnameField.value.trim();
+            const ip = ipField.value.trim();
+            
+            console.log('Form values:', { hostname, ip, hostnameLength: hostname.length, ipLength: ip.length });
+            
+            if (!ip || ip.length === 0) {
+                console.error('IP address is empty');
+                alert('IP address is required. Please enter a valid IP address.');
+                ipField.focus();
+                return;
+            }
+            
+            // Basic IP format validation
+            const ipRegex = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+            if (!ipRegex.test(ip)) {
+                console.error('Invalid IP format:', ip);
+                alert('Please enter a valid IP address format (e.g., 10.10.10.42)');
+                ipField.focus();
+                return;
+            }
+            
+            // Generate hostname if not provided
+            const finalHostname = hostname || `server-${ip.replace(/\./g, '-')}`;
+            
+            // Disable button and show loading
+            const btn = document.getElementById('addServerBtn');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<div class="loading-spinner"></div> Adding Server...';
+            
+            fetch('/api/add_server', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    hostname: finalHostname,
+                    ip_address: ip
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showResult('Server Added Successfully', `
+                        <div class="alert alert-success">
+                            <strong>Server:</strong> ${data.server.name}<br>
+                            <strong>IP Address:</strong> ${data.server.ip}<br>
+                            <strong>Status:</strong> ${data.server.status}<br>
+                            <strong>Setup Date:</strong> ${new Date(data.server.setup_date).toLocaleString()}<br>
+                            <strong>Message:</strong> ${data.message}
+                        </div>
+                        <p class="text-muted">Server has been automatically configured with SSH access and sudo privileges.</p>
+                        ${!hostname ? `<p class="text-info"><i class="fas fa-info-circle me-1"></i>Hostname "${finalHostname}" was auto-generated from IP address.</p>` : ''}
+                    `);
+                    
+                    // Close the modal and refresh the server list
+                    bootstrap.Modal.getInstance(document.getElementById('addServerModal')).hide();
+                    
+                    // Refresh the server management section
+                    setTimeout(() => {
+                        refreshServerManagement();
+                        // Also refresh the server select dropdowns in other modals
+                        refreshServerDropdowns();
+                    }, 1000);
+                } else {
+                    showResult('Error Adding Server', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
+            })
+            .finally(() => {
+                // Re-enable button
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+        }
+        
+        // Validate user on server
+        function validateUserOnServer() {
+            const server = document.getElementById('createServerSelect').value;
+            const username = document.getElementById('createUsernameInput').value;
+            
+            if (!server || !username) {
+                alert('Please select a server and enter a username first');
+                return;
+            }
+            
+            // Get server IP from the selected option
+            const serverOption = document.getElementById('createServerSelect').selectedOptions[0];
+            const serverText = serverOption.text;
+            const serverIP = serverText.match(/\(([^)]+)\)/)?.[1];
+            
+            if (!serverIP) {
+                alert('Could not determine server IP address');
+                return;
+            }
+            
+            // Show loading state
+            const resultDiv = document.getElementById('userValidationResult');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Validating user "${username}" on ${server} (${serverIP})...
+                </div>
+            `;
+            
+            // Call API to validate user
+            fetch('/api/validate_user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server_ip: serverIP,
+                    username: username
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.user_exists) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>User Validated!</strong><br>
+                                User "${username}" exists on ${server} (${serverIP})
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>User Not Found!</strong><br>
+                                User "${username}" does not exist on ${server} (${serverIP})<br>
+                                <small class="text-muted">You can still create a password, but the user must exist on the server for it to be useful.</small>
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Validation Failed!</strong><br>
+                            ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>System Error!</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            });
+        }
+
+        // Create new password
+        function createNewPassword() {
+            const server = document.getElementById('createServerSelect').value;
+            const username = document.getElementById('createUsernameInput').value;
+            const passwordLength = document.getElementById('passwordLengthInput').value;
+            
+            if (!server || !username) {
+                alert('Please select a server and enter a username');
+                return;
+            }
+            
+            fetch('/api/create_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server: server,
+                    username: username,
+                    password_length: parseInt(passwordLength)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResult('Password Created Successfully', `
+                        <div class="alert alert-success">
+                            <strong>Server:</strong> ${data.server}<br>
+                            <strong>Username:</strong> ${data.username}<br>
+                            <strong>Password:</strong> 
+                            <div class="password-display">
+                                ${data.password}
+                                <button class="copy-btn" onclick="copyToClipboard('${data.password}')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <strong>Vault Location:</strong> ${data.vault_location}<br>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                        <p class="text-muted">Password has been securely stored in Ansible Vault.</p>
+                        <div class="mt-3">
+                            <button class="btn btn-primary me-2" onclick="changePasswordOnServer('${server}', '${username}', '${data.password}')">
+                                <i class="fas fa-key me-1"></i>
+                                Change Password on Server
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="refreshAfterPasswordChange()">
+                                <i class="fas fa-refresh me-1"></i>
+                                Refresh Page
+                            </button>
+                        </div>
+                    `);
+                    
+                    // Close the create modal
+                    bootstrap.Modal.getInstance(document.getElementById('createPasswordModal')).hide();
+                    
+                    // Refresh password count and server management
+                    loadPasswordCount();
+                    refreshServerManagement();
+                    
+                    // Clear the user validation result
+                    const userValidationResult = document.getElementById('userValidationResult');
+                    if (userValidationResult) {
+                        userValidationResult.style.display = 'none';
+                        userValidationResult.innerHTML = '';
+                    }
+                } else {
+                    showResult('Error Creating Password', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.message}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
+            });
+        }
+        
+        // Change password on server
+        function changePasswordOnServer(server, username, password) {
+            // Get server IP from the server name
+            const serverSelect = document.getElementById('createServerSelect');
+            const serverOption = Array.from(serverSelect.options).find(option => option.value === server);
+            if (!serverOption) {
+                alert('Could not find server information');
+                return;
+            }
+            
+            const serverText = serverOption.text;
+            const serverIP = serverText.match(/\(([^)]+)\)/)?.[1];
+            
+            if (!serverIP) {
+                alert('Could not determine server IP address');
+                return;
+            }
+            
+            if (confirm(`Are you sure you want to change the password for user "${username}" on server "${server}" (${serverIP})?\n\nThis will update the actual user password on the server.`)) {
+                // Show loading state
+                showResult('Changing Password on Server', `
+                    <div class="alert alert-info">
+                        <strong>Changing password for:</strong> ${username}@${server} (${serverIP})<br>
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Please wait...
+                    </div>
+                `);
+                
+                // Call API to change password on server
+                fetch('/api/change_user_password', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        server_ip: serverIP,
+                        username: username,
+                        new_password: password
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showResult('Password Changed on Server', `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>Success!</strong><br>
+                                Password for user "${username}" has been changed on server "${server}" (${serverIP})
+                            </div>
+                            <div class="alert alert-info">
+                                <strong>What happened:</strong><br>
+                                • Password was stored in Ansible Vault ✅<br>
+                                • Password was changed on the actual server ✅<br>
+                                • User can now login with the new password ✅
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="refreshAfterPasswordChange()">
+                                    <i class="fas fa-refresh me-1"></i>
+                                    Refresh Page
+                                </button>
+                            </div>
+                        `);
+                        
+                        // Auto-refresh after 3 seconds
+                        setTimeout(() => {
+                            refreshAfterPasswordChange();
+                        }, 3000);
+                    } else {
+                        showResult('Error Changing Password', `
+                            <div class="alert alert-danger">
+                                <i class="fas fa-times-circle me-2"></i>
+                                <strong>Error:</strong> ${data.error}
+                            </div>
+                            <div class="alert alert-warning">
+                                <strong>Note:</strong> The password was stored in Ansible Vault, but the server password change failed.
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>System Error:</strong> ${error.message}
+                        </div>
+                    `);
+                });
+            }
+                }
+        
+        // Show dashboard overview
+        function showDashboardOverview() {
+            // Hide all sections first
+            hideAllSections();
+            
+            // Show overview section
+            document.getElementById('serverOverviewSection').style.display = 'block';
+            
+            // Update active nav link
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelector('.sidebar .nav-link').classList.add('active');
+            
+            // Load server statistics
+            loadServerStatistics();
+        }
+        
+        // Show add account section
+        function showCreatePasswordSection() {
+            // Hide all sections
+            hideAllSections();
+            
+            // Show create password section
+            document.getElementById('createPasswordSection').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink(event.target);
+            
+            // Refresh server dropdowns
+            refreshServerDropdowns();
+            
+            // Load password count
+            loadPasswordCount();
+        }
+        
+        // Show retrieve password section
+        function showRetrievePasswordSection() {
+            // Hide all sections
+            hideAllSections();
+            
+            // Show retrieve password section
+            document.getElementById('retrievePasswordSection').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink(event.target);
+            
+            // Refresh server dropdowns
+            refreshServerDropdowns();
+            
+            // Load password count
+            loadPasswordCount();
+        }
+        
+        // Show manage passwords section
+        function showManagePasswordsSection() {
+            // Hide all sections
+            hideAllSections();
+            
+            // Show manage passwords section
+            document.getElementById('managePasswordsSection').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink(event.target);
+            
+            // Load passwords
+            loadPasswordList();
+        }
+        
+        // Show versions section
+        function showVersionsSection() {
+            // Hide all sections
+            hideAllSections();
+            
+            // Show versions section
+            document.getElementById('versionsSection').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink(event.target);
+        }
+        
+        // Show help section
+        function showHelpSection() {
+            // Hide all sections
+            hideAllSections();
+            
+            // Show help section
+            document.getElementById('helpSection').style.display = 'block';
+            
+            // Update active nav link
+            updateActiveNavLink(event.target);
+        }
+        
+        // Show change password modal
+        function showChangePasswordModal() {
+            // Clear form
+            document.getElementById('changePasswordForm').reset();
+            document.getElementById('passwordChangeResult').style.display = 'none';
+            
+            // Show modal
+            new bootstrap.Modal(document.getElementById('changePasswordModal')).show();
+        }
+        
+        // Change admin password
+        function changeAdminPassword() {
+            const currentPassword = document.getElementById('currentPasswordInput').value;
+            const newPassword = document.getElementById('newPasswordInput').value;
+            const confirmPassword = document.getElementById('confirmPasswordInput').value;
+            const resultDiv = document.getElementById('passwordChangeResult');
+            
+            // Validation
+            if (!currentPassword || !newPassword || !confirmPassword) {
+                showPasswordChangeResult('Please fill in all fields', 'danger');
+                return;
+            }
+            
+            if (newPassword.length < 8) {
+                showPasswordChangeResult('New password must be at least 8 characters long', 'danger');
+                return;
+            }
+            
+            if (newPassword !== confirmPassword) {
+                showPasswordChangeResult('New passwords do not match', 'danger');
+                return;
+            }
+            
+            // Call API to change password
+            fetch('/api/change_admin_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    current_password: currentPassword,
+                    new_password: newPassword
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showPasswordChangeResult('Password changed successfully! You will be logged out in 3 seconds.', 'success');
+                    // Clear form
+                    document.getElementById('changePasswordForm').reset();
+                    // Logout after 3 seconds
+                    setTimeout(() => {
+                        window.location.href = '/logout';
+                    }, 3000);
+                } else {
+                    showPasswordChangeResult(data.message || 'Failed to change password', 'danger');
+                }
+            })
+            .catch(error => {
+                showPasswordChangeResult('Error changing password: ' + error.message, 'danger');
+            });
+        }
+        
+        // Show password change result
+        function showPasswordChangeResult(message, type) {
+            const resultDiv = document.getElementById('passwordChangeResult');
+            resultDiv.className = `alert alert-${type}`;
+            resultDiv.innerHTML = message;
+            resultDiv.style.display = 'block';
+        }
+        
+        // Hide all sections
+        function hideAllSections() {
+            const sections = [
+                'createPasswordSection',
+                'retrievePasswordSection',
+                'managePasswordsSection',
+                'serverManagementSection',
+                'helpSection',
+                'versionsSection'
+            ];
+            
+            sections.forEach(sectionId => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.style.display = 'none';
+                }
+            });
+        }
+        
+        // Update active nav link
+        function updateActiveNavLink(clickedLink) {
+            // Remove active class from all nav links
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Add active class to clicked link
+            if (clickedLink) {
+                clickedLink.classList.add('active');
+            }
+        }
+        
+        // Add new account inline
+        function createNewPasswordInline() {
+            const server = document.getElementById('createServerSelectInline').value;
+            const username = document.getElementById('createUsernameInputInline').value;
+            const passwordLength = document.getElementById('passwordLengthInputInline').value;
+            
+            if (!server || !username) {
+                alert('Please select a server and enter a username');
+                return;
+            }
+            
+            // Show loading state
+            const btn = document.querySelector('#createPasswordSection .btn-success');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Creating...';
+            btn.disabled = true;
+            
+            // Call API to create password
+            fetch('/api/create_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server: server,
+                    username: username,
+                    password_length: parseInt(passwordLength)
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResult('Password Created Successfully', `
+                        <div class="alert alert-success">
+                            <strong>Server:</strong> ${data.server}<br>
+                            <strong>Username:</strong> ${data.username}<br>
+                            <strong>Password:</strong> 
+                            <div class="password-display">
+                                ${data.password}
+                                <button class="copy-btn" onclick="copyToClipboard('${data.password}')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <strong>Vault Location:</strong> ${data.vault_location}<br>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                        <p class="text-muted">Password has been securely stored in Ansible Vault.</p>
+                        <div class="mt-3">
+                            <button class="btn btn-primary me-2" onclick="changePasswordOnServer('${server}', '${username}', '${data.password}')">
+                                <i class="fas fa-key me-1"></i>
+                                Change Password on Server
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="refreshAfterPasswordChange()">
+                                <i class="fas fa-refresh me-1"></i>
+                                Refresh Page
+                            </button>
+                        </div>
+                    `);
+                    
+                    // Clear form
+                    document.getElementById('createPasswordFormInline').reset();
+                    document.getElementById('userValidationResultInline').style.display = 'none';
+                    
+                    // Refresh data
+                    loadPasswordCount();
+                    refreshServerManagement();
+                } else {
+                    showResult('Error Creating Password', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.message}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
+            })
+            .finally(() => {
+                // Restore button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+        
+        // Retrieve existing password inline
+        function retrieveExistingPasswordInline() {
+            const server = document.getElementById('retrieveServerSelectInline').value;
+            const username = document.getElementById('retrieveUsernameInputInline').value;
+            
+            if (!server) {
+                alert('Please select a server');
+                return;
+            }
+            
+            // Show loading state
+            const btn = document.querySelector('#retrievePasswordSection .btn-primary');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '<div class="spinner-border spinner-border-sm me-2"></div>Retrieving...';
+            btn.disabled = true;
+            
+            fetch('/api/retrieve_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server: server,
+                    username: username
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResult('Password Retrieved', `
+                        <div class="alert alert-success">
+                            <strong>Server:</strong> ${data.server}<br>
+                            <strong>Username:</strong> ${data.username}<br>
+                            <strong>Password:</strong> 
+                            <div class="password-display">
+                                ${data.password}
+                                <button class="btn copy-btn" onclick="copyToClipboard('${data.password}')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `);
+                    
+                    // Clear form
+                    document.getElementById('retrievePasswordFormInline').reset();
+                } else {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.message}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
+            })
+            .finally(() => {
+                // Restore button
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+        }
+        
+        // Load password list
+        function loadPasswordList() {
+            const container = document.getElementById('passwordListContainer');
+            
+            // Show loading state
+            container.innerHTML = `
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2">Loading passwords...</p>
+                </div>
+            `;
+            
+            fetch('/api/list_passwords')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (data.passwords.length > 0) {
+                        let content = '<div class="table-responsive"><table class="table table-striped table-hover">';
+                        content += '<thead class="table-dark"><tr><th>Server</th><th>Username</th><th>Last Updated</th><th>Status</th><th>Actions</th></tr></thead><tbody>';
+                        
+                        data.passwords.forEach(pwd => {
+                            content += `<tr>
+                                <td><strong>${pwd.server}</strong></td>
+                                <td><code>${pwd.username}</code></td>
+                                <td>${pwd.last_updated || 'Unknown'}</td>
+                                <td><span class="badge bg-success">${pwd.status || 'Active'}</span></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        <button class="btn btn-outline-primary" onclick="retrievePassword('${pwd.server}', '${pwd.username}')">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-outline-success" onclick="createPassword('${pwd.server}', '${pwd.username}')">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                        <button class="btn btn-outline-info" onclick="showServerPasswords('${pwd.server}')">
+                                            <i class="fas fa-list"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        });
+                        
+                        content += '</tbody></table></div>';
+                        container.innerHTML = content;
+                    } else {
+                        container.innerHTML = `
+                            <div class="text-center text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3"></i>
+                                <h5>No Passwords Found</h5>
+                                <p>You haven't created any passwords yet. Use the "Create Password" section to get started.</p>
+                                <button class="btn btn-success" onclick="showCreatePasswordSection()">
+                                    <i class="fas fa-plus me-1"></i>
+                                    Create Your First Password
+                                </button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    container.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                container.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `;
+            });
+        }
+        
+        // Refresh password list
+        function refreshPasswordList() {
+            loadPasswordList();
+        }
+        
+        // Validate user on server inline
+        function validateUserOnServerInline() {
+            const server = document.getElementById('createServerSelectInline').value;
+            const username = document.getElementById('createUsernameInputInline').value;
+            
+            if (!server || !username) {
+                alert('Please select a server and enter a username first');
+                return;
+            }
+            
+            // Get server IP from the selected option
+            const serverOption = document.getElementById('createServerSelectInline').selectedOptions[0];
+            const serverText = serverOption.text;
+            const serverIP = serverText.match(/\(([^)]+)\)/)?.[1];
+            
+            if (!serverIP) {
+                alert('Could not determine server IP address');
+                return;
+            }
+            
+            // Show loading state
+            const resultDiv = document.getElementById('userValidationResultInline');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = `
+                <div class="alert alert-info">
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Validating user "${username}" on ${server} (${serverIP})...
+                </div>
+            `;
+            
+            // Call API to validate user
+            fetch('/api/validate_user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server_ip: serverIP,
+                    username: username
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    if (data.user_exists) {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                <strong>User Validated!</strong><br>
+                                User "${username}" exists on ${server} (${serverIP})
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>User Not Found!</strong><br>
+                                User "${username}" does not exist on ${server} (${serverIP})<br>
+                                <small class="text-muted">You can still create a password, but the user must exist on the server for it to be useful.</small>
+                            </div>
+                        `;
+                    }
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-times-circle me-2"></i>
+                            <strong>Validation Failed!</strong><br>
+                            ${data.error}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                resultDiv.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-times-circle me-2"></i>
+                        <strong>System Error!</strong><br>
+                        ${error.message}
+                    </div>
+                `;
+            });
+        }
+        
+        // Refresh page after password change
+        function refreshAfterPasswordChange() {
+            // Close the result modal
+            const resultModal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+            if (resultModal) {
+                resultModal.hide();
+            }
+            
+            // Refresh server management section
+            refreshServerManagement();
+            
+            // Refresh password count and list
+            loadPasswordCount();
+            
+            // Refresh server dropdowns
+            refreshServerDropdowns();
+            
+            // Show a brief success message
+            setTimeout(() => {
+                showResult('Page Refreshed', `
+                    <div class="alert alert-success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        <strong>Page refreshed successfully!</strong><br>
+                        All data has been updated to reflect the recent changes.
+                    </div>
+                `);
+                
+                // Auto-close this message after 2 seconds
+                setTimeout(() => {
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+                }, 2000);
+            }, 500);
+        }
+
+        // Retrieve existing password
+        function retrieveExistingPassword() {
+            const server = document.getElementById('retrieveServerSelect').value;
+            const username = document.getElementById('retrieveUsernameInput').value;
+            
+            if (!server) {
+                alert('Please select a server');
+                return;
+            }
+            
+            fetch('/api/retrieve_password', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    server: server,
+                    username: username
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    showResult('Password Retrieved', `
+                        <div class="alert alert-success">
+                            <strong>Server:</strong> ${data.server}<br>
+                            <strong>Username:</strong> ${data.username}<br>
+                            <strong>Password:</strong> 
+                            <div class="password-display">
+                                ${data.password}
+                                <button class="btn copy-btn" onclick="copyToClipboard('${data.password}')">
+                                    <i class="fas fa-copy"></i> Copy
+                                </button>
+                            </div>
+                            <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
+                        </div>
+                    `);
+                    
+                    // Close the retrieve modal
+                    bootstrap.Modal.getInstance(document.getElementById('retrievePasswordModal')).hide();
+                    
+                    // Refresh password count and server management
+                    loadPasswordCount();
+                    refreshServerManagement();
+                } else {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.message}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
+            });
+        }
+        
+        // Quick create password
+        function createPassword(server, username) {
+            // Refresh server dropdown first
+            refreshServerDropdowns();
+            
+            // Set values after a short delay to ensure dropdown is populated
+            setTimeout(() => {
+                document.getElementById('createServerSelect').value = server;
+                document.getElementById('createUsernameInput').value = username || 'root';
+                
+                // Show modal
+                new bootstrap.Modal(document.getElementById('createPasswordModal')).show();
+            }, 100);
+        }
+        
+        // Quick retrieve password
+        function retrievePassword(server, username) {
+            // Refresh server dropdown first
+            refreshServerDropdowns();
+            
+            // Set values after a short delay to ensure dropdown is populated
+            setTimeout(() => {
+                document.getElementById('retrieveServerSelect').value = server;
+                document.getElementById('retrieveUsernameInput').value = username || 'root';
+                
+                // Show modal
+                new bootstrap.Modal(document.getElementById('retrievePasswordModal')).show();
+            }, 100);
+        }
+        
+        // Show result modal
+        function showResult(title, content) {
+            document.getElementById('resultModalTitle').innerHTML = title;
+            document.getElementById('resultModalBody').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('resultModal')).show();
+        }
+        
+        // Copy to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                // Show success feedback
+                const btn = event.target.closest('.copy-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                btn.style.background = '#28a745';
+                
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.background = '';
+                }, 2000);
+            });
+        }
+        
+        // List all passwords
+        function listAllPasswords() {
+            fetch('/api/list_passwords')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    let content = '<div class="table-responsive"><table class="table table-striped">';
+                    content += '<thead><tr><th>Server</th><th>Username</th><th>Last Updated</th><th>Status</th></tr></thead><tbody>';
+                    
+                    if (data.passwords.length > 0) {
+                        data.passwords.forEach(pwd => {
+                            content += `<tr>
+                                <td>${pwd.server}</td>
+                                <td>${pwd.username}</td>
+                                <td>${pwd.last_updated}</td>
+                                <td><span class="badge bg-success">${pwd.status}</span></td>
+                            </tr>`;
+                        });
+                    } else {
+                        content += '<tr><td colspan="4" class="text-center text-muted">No passwords found</td></tr>';
+                    }
+                    
+                    content += '</tbody></table></div>';
+                    showResult('All Stored Passwords', content);
+                } else {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `);
+                }
+            });
+        }
+        
+        // Show server passwords
+        function showServerPasswords(server) {
+            fetch('/api/list_passwords')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const serverPasswords = data.passwords.filter(pwd => pwd.server === server);
+                    
+                    let content = `<h6>Passwords for ${server}:</h6>`;
+                    if (serverPasswords.length > 0) {
+                        content += '<div class="table-responsive"><table class="table table-sm">';
+                        content += '<thead><tr><th>Username</th><th>Last Updated</th><th>Status</th></tr></thead><tbody>';
+                        
+                        serverPasswords.forEach(pwd => {
+                            content += `<tr>
+                                <td>${pwd.username}</td>
+                                <td>${pwd.last_updated}</td>
+                                <td><span class="badge bg-success">${pwd.status}</span></td>
+                            </tr>`;
+                        });
+                        
+                        content += '</tbody></table></div>';
+                    } else {
+                        content += '<p class="text-muted">No passwords found for this server.</p>';
+                    }
+                    
+                    showResult(`Server Passwords - ${server}`, content);
+                }
+            });
+        }
+        
+        // Refresh server dropdowns in modals
+        function refreshServerDropdowns() {
+            fetch('/api/servers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update create password modal dropdown
+                    const createServerSelect = document.getElementById('createServerSelect');
+                    if (createServerSelect) {
+                        createServerSelect.innerHTML = '<option value="">Select a server...</option>';
+                        data.servers.forEach(server => {
+                            const option = document.createElement('option');
+                            option.value = server.name;
+                            option.textContent = `${server.name} (${server.ip})`;
+                            createServerSelect.appendChild(option);
+                        });
+                    }
+                    
+                    // Update retrieve password modal dropdown
+                    const retrieveServerSelect = document.getElementById('retrieveServerSelect');
+                    if (retrieveServerSelect) {
+                        retrieveServerSelect.innerHTML = '<option value="">Select a server...</option>';
+                        data.servers.forEach(server => {
+                            const option = document.createElement('option');
+                            option.value = server.name;
+                            option.textContent = `${server.name} (${server.ip})`;
+                            retrieveServerSelect.appendChild(option);
+                        });
+                    }
+                    
+                    console.log('Server dropdowns refreshed successfully');
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing server dropdowns:', error);
+            });
+        }
+
+        // Refresh server management data
+        function refreshServerManagement() {
+            // Fetch latest server data
+            fetch('/api/servers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update server count
+                    const serverCount = document.getElementById('serverCount');
+                    if (serverCount) {
+                        serverCount.textContent = data.servers.length;
+                    }
+                    
+                    // Update server list table
+                    const serverTableBody = document.getElementById('serverTableBody');
+                    if (serverTableBody) {
+                        serverTableBody.innerHTML = '';
+                        
+                        if (data.servers.length === 0) {
+                            serverTableBody.innerHTML = `
+                                <tr>
+                                    <td colspan="6" class="text-center text-muted">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        No servers found. Add your first server to get started.
+                                    </td>
+                                </tr>
+                            `;
+                        } else {
+                            data.servers.forEach(server => {
+                                const row = document.createElement('tr');
+                                row.innerHTML = `
+                                    <td>
+                                        <strong>${server.name}</strong>
+                                        <br><small class="text-muted">${server.ip}</small>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-${server.status === 'online' ? 'success' : 'secondary'}">
+                                            ${server.status}
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-${server.ssh_status === 'connected' ? 'success' : 'secondary'}">
+                                            ${server.ssh_status || 'Unknown'}
+                                        </span>
+                                    </td>
+                                    <td>${server.last_access || 'Never'}</td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <button class="btn btn-sm btn-outline-primary" onclick="showResult('Server Info', 'Connection testing removed for simplicity')">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-success" onclick="createPassword('${server.name}', '')">
+                                                <i class="fas fa-plus"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-warning" onclick="editServer('${server.name}')">
+                                                <i class="fas fa-edit"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger" onclick="removeServer('${server.name}')">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                `;
+                                serverTableBody.appendChild(row);
+                            });
+                        }
+                    }
+                    
+                    // Update online/offline counts if they exist
+                    const onlineCount = document.getElementById('onlineCount');
+                    const offlineCount = document.getElementById('offlineCount');
+                    
+                    if (onlineCount) {
+                        const onlineServers = data.servers.filter(s => s.status === 'online').length;
+                        onlineCount.textContent = onlineServers;
+                    }
+                    
+                    if (offlineCount) {
+                        const offlineServers = data.servers.filter(s => s.status === 'offline').length;
+                        offlineCount.textContent = offlineServers;
+                    }
+                    
+                    console.log('Server management refreshed successfully');
+                } else {
+                    console.error('Failed to refresh server data:', data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error refreshing server management:', error);
+            });
+        }
+
+        // Show server management section
+        function showServerManagement() {
+            // Hide all sections first
+            hideAllSections();
+            
+            // Hide overview section
+            document.getElementById('serverOverviewSection').style.display = 'none';
+            // Show management section
+            document.getElementById('serverManagementSection').style.display = 'block';
+            // Update active nav link
+            document.querySelectorAll('.sidebar .nav-link').forEach(link => link.classList.remove('active'));
+            document.querySelector('.sidebar .nav-link:nth-child(2)').classList.add('active');
+            
+            // Load server statistics
+            loadServerStatistics();
+            
+            // Refresh server list to ensure it's current
+            refreshServerManagement();
+        }
+        
+
+        
+        // Load server statistics
+        function loadServerStatistics() {
+            // Update password count
+            fetch('/api/list_passwords')
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('managedPasswordsCount').textContent = data.passwords.length;
+                }
+            });
+            
+            // Update server counts
+            fetch('/api/servers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const total = data.servers.length;
+                    const online = data.servers.filter(s => s.status === 'online').length;
+                    const pending = data.servers.filter(s => s.status === 'pending').length;
+                    
+                    document.getElementById('totalServersCount').textContent = total;
+                    document.getElementById('onlineServersCount').textContent = online;
+                    document.getElementById('pendingServersCount').textContent = pending;
+                }
+            });
+        }
+        
+        // Show add server form
+        function showAddServerForm() {
+            console.log('showAddServerForm called');
+            
+            // Clear form
+            const hostnameField = document.getElementById('serverHostname');
+            const ipField = document.getElementById('serverIP');
+            
+            if (hostnameField) hostnameField.value = '';
+            if (ipField) ipField.value = '';
+            
+            console.log('Form cleared, fields:', { hostnameField, ipField });
+            
+            // Show modal
+            const modal = new bootstrap.Modal(document.getElementById('addServerModal'));
+            modal.show();
+            
+            // Focus on IP address field after modal is shown
+            setTimeout(() => {
+                if (ipField) {
+                    ipField.focus();
+                    console.log('Focused on IP field');
+                } else {
+                    console.error('IP field not found for focus');
+                }
+            }, 500);
+        }
+        
+
+        
+        // Edit server
+        function editServer(serverName) {
+            // Find server data
+            fetch('/api/servers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    const server = data.servers.find(s => s.name === serverName);
+                    if (server) {
+                        showResult('Edit Server', `
+                            <div class="alert alert-info">
+                                <strong>Server:</strong> ${server.name}<br>
+                                <strong>IP Address:</strong> ${server.ip}<br>
+                                <strong>Status:</strong> ${server.status}<br>
+                                <strong>Setup Date:</strong> ${server.setup_date ? new Date(server.setup_date).toLocaleDateString() : 'Unknown'}
+                            </div>
+                            <p class="text-muted">Server editing functionality coming soon!</p>
+                        `);
+                    }
+                }
+            });
+        }
+        
+        // Remove server
+        function removeServer(serverName) {
+            if (confirm(`Are you sure you want to remove server "${serverName}"? This will not delete the server itself, only remove it from management.`)) {
+                // Show loading state
+                showResult('Remove Server', `
+                    <div class="alert alert-info">
+                        <strong>Removing server:</strong> ${serverName}<br>
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        Please wait...
+                    </div>
+                `);
+                
+                // Call API to remove server
+                fetch('/api/remove_server', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        server_name: serverName
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success') {
+                        showResult('Server Removed', `
+                            <div class="alert alert-success">
+                                <strong>Success!</strong><br>
+                                Server "${serverName}" has been removed from management.
+                            </div>
+                            <div class="mt-3">
+                                <button class="btn btn-primary" onclick="refreshServerManagement()">
+                                    <i class="fas fa-refresh me-1"></i>
+                                    Refresh Now
+                                </button>
+                            </div>
+                        `);
+                        
+                        // Immediately refresh the server management section
+                        refreshServerManagement();
+                        
+                        // Close the result modal after 3 seconds and refresh again
+                        setTimeout(() => {
+                            const resultModal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
+                            if (resultModal) {
+                                resultModal.hide();
+                            }
+                            // Refresh one more time to ensure the list is current
+                            refreshServerManagement();
+                        }, 3000);
+                    } else {
+                        showResult('Error', `
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> ${data.error}
+                            </div>
+                        `);
+                    }
+                })
+                .catch(error => {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <strong>System Error:</strong> ${error.message}
+                        </div>
+                    `);
+                });
+            }
+        }
+        
+
+        
+        // Bulk create passwords for all servers
+        function bulkCreateRootPasswords() {
+            if (confirm('Create passwords for all servers? This will generate and store passwords for users on all managed servers.')) {
+                showResult('Bulk Password Creation', `
+                    <div class="alert alert-info">
+                        <strong>Creating passwords for all servers...</strong><br>
+                        This feature will be implemented soon to automatically create passwords for all managed servers.
+                    </div>
+                `);
+            }
+        }
+        
+        // Bulk health check for all servers
+        function bulkHealthCheck() {
+            if (confirm('Run health check on all servers? This will verify SSH access, sudo privileges, and basic system health.')) {
+                showResult('Bulk Health Check', `
+                    <div class="alert alert-info">
+                        <strong>Running health check on all servers...</strong><br>
+                        This feature will be implemented soon to perform comprehensive health checks on all managed servers.
+                    </div>
+                `);
+            }
+        }
+        
+        // Export server list
+        function exportServerList() {
+            fetch('/api/servers')
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Create CSV content
+                    let csv = 'Server Name,IP Address,Status,SSH Status,Last Access,Setup Date\n';
+                    data.servers.forEach(server => {
+                        csv += `"${server.name}","${server.ip}","${server.status}","${server.ssh_status || 'Unknown'}","${server.last_access}","${server.setup_date || 'Unknown'}"\n`;
+                    });
+                    
+                    // Create download link
+                    const blob = new Blob([csv], { type: 'text/csv' });
+                    const url = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `server_list_${new Date().toISOString().slice(0, 10)}.csv`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                    
+                    showResult('Export Complete', `
+                        <div class="alert alert-success">
+                            <strong>Server list exported successfully!</strong><br>
+                            File: server_list_${new Date().toISOString().slice(0, 10)}.csv
+                        </div>
+                    `);
+                }
+            });
+        }
+        
+        // Refresh server status
+        function refreshServerStatus() {
+            // Show loading state
+            const refreshBtn = event.target;
+            const originalText = refreshBtn.innerHTML;
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<div class="loading-spinner"></div> Refreshing...';
+            
+            // Reload page after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

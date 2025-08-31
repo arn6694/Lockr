@@ -1,0 +1,33 @@
+[Unit]
+Description=Lockr Enterprise Server & Password Management
+Documentation=https://github.com/arn6694/ansible
+After=network.target
+Wants=network.target
+
+[Service]
+Type=simple
+User=brian
+Group=brian
+WorkingDirectory=/home/brian/Cursor/Password-Manager
+Environment=PATH=/home/brian/Cursor/Password-Manager/venv/bin
+ExecStart=/home/brian/Cursor/Password-Manager/venv/bin/python /home/brian/Cursor/Password-Manager/enhanced_unified_manager.py
+ExecReload=/bin/kill -HUP $MAINPID
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=lockr
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ReadWritePaths=/home/brian/playbooks
+ReadWritePaths=/home/brian/Cursor/Password-Manager
+
+# Resource limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
