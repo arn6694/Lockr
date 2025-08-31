@@ -822,10 +822,33 @@ def change_user_password():
                 "error": f"Failed to change password for user '{username}' on {server_ip}"
             }), 500
         
+    except paramiko.AuthenticationException as auth_error:
+        return jsonify({
+            "status": "error",
+            "error": f"SSH authentication failed: {str(auth_error)}",
+            "details": "The server doesn't have your SSH key set up yet. Please set up SSH access first.",
+            "solution": "Use 'Manage Servers' to add your SSH key to the server, or manually add it to ~/.ssh/authorized_keys"
+        }), 500
+    except paramiko.SSHException as ssh_error:
+        return jsonify({
+            "status": "error",
+            "error": f"SSH connection error: {str(ssh_error)}",
+            "details": "Unable to establish SSH connection to the server",
+            "solution": "Check if the server is reachable and SSH is running on port 22"
+        }), 500
+    except socket.timeout:
+        return jsonify({
+            "status": "error",
+            "error": "SSH connection timeout",
+            "details": "The server didn't respond to SSH connection attempts",
+            "solution": "Check server connectivity and firewall settings"
+        }), 500
     except Exception as e:
         return jsonify({
             "status": "error",
-            "error": f"Failed to change password: {str(e)}"
+            "error": f"Failed to change password: {str(e)}",
+            "details": "An unexpected error occurred during password change",
+            "solution": "Check server logs and ensure SSH access is properly configured"
         }), 500
 
 @app.route('/api/create_password', methods=['POST'])
@@ -848,19 +871,22 @@ def create_password():
     # Store in vault
     result = create_vault_structure(server, username, new_password)
     
-    if result['success']:
-        # Log the creation for audit purposes
-        log_action(session['username'], 'create', server, username, 'success')
-        
-        return jsonify({
-            "status": "success",
-            "message": f"Password created for {username}@{server}",
-            "password": new_password,
-            "server": server,
-            "username": username,
-            "timestamp": datetime.now().isoformat(),
-            "vault_location": result['vault_dir']
-        })
+            if result['success']:
+            # Log the creation for audit purposes
+            log_action(session['username'], 'create', server, username, 'success')
+            
+            # Note: Password is stored in vault but not deployed to server
+            # Server password change requires SSH access to be set up first
+            return jsonify({
+                "status": "success",
+                "message": f"Password created for {username}@{server} and stored securely in Ansible Vault",
+                "password": new_password,
+                "server": server,
+                "username": username,
+                "timestamp": datetime.now().isoformat(),
+                "vault_location": result['vault_dir'],
+                "note": "Password is stored securely but not yet deployed to the server. Use 'Change Password' feature after setting up SSH access."
+            })
     else:
         log_action(session['username'], 'create', server, username, 'failed')
         return jsonify({
