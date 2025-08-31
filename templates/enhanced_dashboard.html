@@ -638,7 +638,7 @@
                                             <tbody>
                                                 <tr>
                                                     <td><strong>Lockr Version:</strong></td>
-                                                    <td><span class="badge bg-primary">0.92</span></td>
+                                                    <td><span class="badge bg-primary">0.93</span></td>
                                                 </tr>
                                                 <tr>
                                                     <td><strong>Python Version:</strong></td>
@@ -692,32 +692,99 @@
                                         <div class="accordion" id="releaseNotes">
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
-                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v091">
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v093">
                                                         Version 0.93 - Current Release
                                                     </button>
                                                 </h2>
-                                                <div id="v091" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                <div id="v093" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>New Features:</strong>
+                                                        <ul>
+                                                            <li>Timestamp Tracking System for password operations</li>
+                                                            <li>Fixed "Last Updated" field to show real-time updates</li>
+                                                            <li>Individual timestamp files for each password</li>
+                                                        </ul>
+                                                        <strong>Technical Improvements:</strong>
+                                                        <ul>
+                                                            <li>update_password_timestamp() function for managing timestamps</li>
+                                                            <li>Enhanced password operations (create, change, retrieve) update timestamps</li>
+                                                            <li>Fallback timestamp system for backward compatibility</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v092">
+                                                        Version 0.92 - SSH Setup & Password Management
+                                                    </button>
+                                                </h2>
+                                                <div id="v092" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>New Features:</strong>
+                                                        <ul>
+                                                            <li>Ansible Playbook Integration for automated SSH setup</li>
+                                                            <li>ssh-copy-id support for proper SSH key deployment</li>
+                                                            <li>Remote setup scripts for automated server configuration</li>
+                                                            <li>Enhanced logging and debugging capabilities</li>
+                                                        </ul>
+                                                        <strong>Fixes:</strong>
+                                                        <ul>
+                                                            <li>Root user password changes now work properly</li>
+                                                            <li>SSH setup workflow resolved</li>
+                                                            <li>Authentication errors fixed</li>
+                                                            <li>Smart password verification logic</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v091">
+                                                        Version 0.91 - Systemd Integration
+                                                    </button>
+                                                </h2>
+                                                <div id="v091" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>Major Features:</strong>
+                                                        <ul>
+                                                            <li>Systemd service integration for production-ready operation</li>
+                                                            <li>Automatic startup on boot</li>
+                                                            <li>Background operation without manual intervention</li>
+                                                            <li>Professional service management with systemctl</li>
+                                                        </ul>
+                                                        <strong>Service Management:</strong>
+                                                        <ul>
+                                                            <li>install_systemd_service.sh for easy installation</li>
+                                                            <li>manage_lockr_service.sh for comprehensive service control</li>
+                                                            <li>Enterprise-grade service configuration</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v09">
+                                                        Version 0.9 - UI & Navigation
+                                                    </button>
+                                                </h2>
+                                                <div id="v09" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
                                                     <div class="accordion-body">
                                                         <strong>Features:</strong>
                                                         <ul>
-                                                            <li>Enterprise server management dashboard</li>
-                                                            <li>Secure password generation and storage with Ansible Vault</li>
-                                                            <li>SSH-based server provisioning and management</li>
-                                                            <li>User validation and live password changes</li>
-                                                            <li>Professional web interface with light/dark themes</li>
-                                                            <li>Comprehensive audit logging</li>
-                                                            <li>Help and documentation system</li>
-                                                            <li>Version tracking and changelog</li>
-                                                            <li>Systemd service integration</li>
-                                                            <li>Automatic startup and background operation</li>
-                                                            <li>Production-ready service management</li>
+                                                            <li>Help system with comprehensive documentation</li>
+                                                            <li>Versions section for system tracking</li>
+                                                            <li>Password change feature for admin management</li>
+                                                            <li>Enhanced navigation and sidebar management</li>
                                                         </ul>
-                                                        <strong>Security:</strong>
+                                                        <strong>Improvements:</strong>
                                                         <ul>
-                                                            <li>Military-grade encryption for all stored data</li>
-                                                            <li>SSH key-based authentication</li>
-                                                            <li>Secure password generation algorithms</li>
-                                                            <li>Audit trail for all operations</li>
+                                                            <li>User-friendly button labels ("Add Account", "View Password")</li>
+                                                            <li>Cleaner dashboard organization</li>
+                                                            <li>Fixed navigation and section switching issues</li>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -726,21 +793,78 @@
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
                                                     <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v08">
-                                                        Version 0.8 - Previous Release
+                                                        Version 0.8 - Foundation
                                                     </button>
                                                 </h2>
                                                 <div id="v08" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
                                                     <div class="accordion-body">
-                                                        <strong>Features:</strong>
+                                                        <strong>Core Features:</strong>
                                                         <ul>
                                                             <li>Basic server management dashboard</li>
                                                             <li>Password creation and retrieval</li>
                                                             <li>SSH server provisioning</li>
                                                             <li>Light/dark theme support</li>
                                                         </ul>
+                                                        <strong>Security:</strong>
+                                                        <ul>
+                                                            <li>Enterprise server management dashboard</li>
+                                                            <li>Secure password generation and storage with Ansible Vault</li>
+                                                            <li>SSH-based server provisioning and management</li>
+                                                            <li>User validation and live password changes</li>
+                                                            <li>Professional web interface with light/dark themes</li>
+                                                            <li>Comprehensive audit logging</li>
+                                                        </ul>
                                                     </div>
                                                 </div>
                                             </div>
+                                        </div>
+                                        
+                                        <hr class="my-3">
+                                        
+                                        <h6 class="text-primary"><i class="fas fa-list me-2"></i>Version History</h6>
+                                        <div class="table-responsive">
+                                            <table class="table table-sm table-striped">
+                                                <thead class="table-dark">
+                                                    <tr>
+                                                        <th>Version</th>
+                                                        <th>Release Date</th>
+                                                        <th>Key Features</th>
+                                                        <th>Status</th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody>
+                                                    <tr>
+                                                        <td><span class="badge bg-primary">0.93</span></td>
+                                                        <td>2025-08-31</td>
+                                                        <td>Timestamp tracking, Last Updated fixes</td>
+                                                        <td><span class="badge bg-success">Current</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">0.92</span></td>
+                                                        <td>2025-08-31</td>
+                                                        <td>Ansible integration, SSH setup fixes</td>
+                                                        <td><span class="badge bg-info">Released</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">0.91</span></td>
+                                                        <td>2025-08-30</td>
+                                                        <td>Systemd service integration</td>
+                                                        <td><span class="badge bg-info">Released</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">0.9</span></td>
+                                                        <td>2025-08-30</td>
+                                                        <td>UI improvements, navigation fixes</td>
+                                                        <td><span class="badge bg-info">Released</span></td>
+                                                    </tr>
+                                                    <tr>
+                                                        <td><span class="badge bg-secondary">0.8</span></td>
+                                                        <td>2025-08-30</td>
+                                                        <td>Foundation features, basic dashboard</td>
+                                                        <td><span class="badge bg-info">Released</span></td>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
                                         </div>
                                     </div>
                                 </div>
