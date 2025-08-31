@@ -653,6 +653,12 @@ def create_vault_structure(server, username, password):
         with open(current_file, 'w') as f:
             f.write(password_file)
         
+        # Create initial timestamp file with creation time
+        timestamp_file = f"{VAULT_DIR}/{server}_{username}_timestamp"
+        creation_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(timestamp_file, 'w') as f:
+            f.write(creation_time)
+        
         # Encrypt with Ansible Vault
         encrypted_file = f"{vault_dir}/password.txt.vault"
         
@@ -804,6 +810,14 @@ def list_all_passwords():
                             last_updated = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
                         else:
                             last_updated = "Unknown"
+                        
+                        # Create timestamp file for backward compatibility
+                        try:
+                            creation_time = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                            with open(timestamp_file, 'w') as f:
+                                f.write(creation_time)
+                        except Exception as e:
+                            app.logger.error(f"Failed to create timestamp file for {username}@{server}: {e}")
                     
                     passwords.append({
                         "server": server,
