@@ -5,6 +5,27 @@ All notable changes to Lockr will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.92] - 2025-08-31
+
+### Added
+- **Ansible Playbook Integration**: Automated SSH setup via ser8 central server
+- **ssh-copy-id Support**: Proper SSH key deployment workflow
+- **Remote Setup Scripts**: `remote_setup.sh` for automated server configuration
+- **Enhanced Logging**: Comprehensive Flask logging for debugging
+
+### Fixed
+- **Password Change Verification**: Root user password changes now work (SSH verification skipped)
+- **SSH Setup Workflow**: Resolved Ansible playbook integration issues
+- **Authentication Errors**: Fixed session management and authentication failures
+- **Error Handling**: Enhanced debugging and logging for operations
+
+### Technical Improvements
+- **SSH Setup Automation**: Streamlined workflow for new server SSH configuration
+- **Central Server Architecture**: ser8 (10.10.10.96) handles all SSH setup operations
+- **Password Verification Logic**: Smart verification that works with server SSH configurations
+
+---
+
 ## [0.91] - 2025-08-30
 
 ### Added
