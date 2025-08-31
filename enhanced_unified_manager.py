@@ -1049,22 +1049,22 @@ def create_password():
     # Store in vault
     result = create_vault_structure(server, username, new_password)
     
-            if result['success']:
-            # Log the creation for audit purposes
-            log_action(session['username'], 'create', server, username, 'success')
-            
-            # Note: Password is stored in vault but not deployed to server
-            # Server password change requires SSH access to be set up first
-            return jsonify({
-                "status": "success",
-                "message": f"Password created for {username}@{server} and stored securely in Ansible Vault",
-                "password": new_password,
-                "server": server,
-                "username": username,
-                "timestamp": datetime.now().isoformat(),
-                "vault_location": result['vault_dir'],
-                "note": "Password is stored securely but not yet deployed to the server. Use 'Change Password' feature after setting up SSH access."
-            })
+    if result['success']:
+        # Log the creation for audit purposes
+        log_action(session['username'], 'create', server, username, 'success')
+        
+        # Note: Password is stored in vault but not deployed to server
+        # Server password change requires SSH access to be set up first
+        return jsonify({
+            "status": "success",
+            "message": f"Password created for {username}@{server} and stored securely in Ansible Vault",
+            "password": new_password,
+            "server": server,
+            "username": username,
+            "timestamp": datetime.now().isoformat(),
+            "vault_location": result['vault_dir'],
+            "note": "Password is stored securely but not yet deployed to the server. Use 'Change Password' feature after setting up SSH access."
+        })
     else:
         log_action(session['username'], 'create', server, username, 'failed')
         return jsonify({
