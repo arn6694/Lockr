@@ -209,6 +209,7 @@ export LOCKR_PORT=5000
 - **Expiration Tracking**: Monitor password age and set expiration policies
 - **Metadata Tags**: Track "rotated," "expires in X days," "last used" status
 - **Lifecycle Alerts**: Get notified when passwords need rotation
+- **Length Enforcement**: Minimum character requirements with policy enforcement
 
 ### Enhanced User Experience
 - **Playbook Feedback**: Real-time confirmation and logs after playbook execution
@@ -221,6 +222,12 @@ export LOCKR_PORT=5000
 - **User Management**: Multi-user support with role-based access control
 - **Backup & Recovery**: Automated backup systems and disaster recovery
 - **Compliance Features**: SOC2, HIPAA, and industry-specific compliance tools
+
+### Security & Compliance
+- **Password Policy Enforcement**: Configurable minimum length, complexity, and rotation policies
+- **Compliance Reporting**: Audit trails for security policy adherence
+- **Policy Templates**: Pre-configured policies for common compliance standards
+- **Real-time Validation**: Instant feedback on password strength and policy compliance
 
 ### Reverse Proxy (Optional)
 
@@ -340,6 +347,7 @@ tail -f /var/log/lockr/app.log
 - [ ] **API Tokens Panel**: Generate and manage scoped API tokens for third-party integration
 - [ ] **Playbook Trigger Feedback**: Modal/toast confirmation with logs after playbook execution
 - [ ] **Password Metadata**: Tags for "rotated," "expires in X days," "last used" lifecycle tracking
+- [ ] **Password Length Enforcement**: Minimum character requirements with policy enforcement
 
 ### Version 0.96
 - [ ] **Audit Trail Panel**: Collapsible section showing recent vault access, playbook runs, and password changes

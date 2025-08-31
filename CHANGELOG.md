@@ -153,6 +153,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **API Tokens Panel**: Generate and manage scoped API tokens for third-party integration
 - **Playbook Trigger Feedback**: Modal/toast confirmation with logs after playbook execution
 - **Password Metadata**: Tags for "rotated," "expires in X days," "last used" lifecycle tracking
+- **Password Length Enforcement**: Minimum character requirements with policy enforcement
+  - **Frontend Validation**: Slider/input with minimum threshold (12+ characters)
+  - **Policy Enforcement**: Global admin settings for minimum length enforcement
+  - **Visual Feedback**: Dynamic strength meter and compliance indicators
+  - **Default + Recommended**: 16 characters as recommended, 12 as minimum
 
 ### Short-term Goals (v0.96-0.97)
 - **Audit Trail Panel**: Collapsible section showing recent vault access, playbook runs, and password changes
