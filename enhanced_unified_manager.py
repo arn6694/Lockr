@@ -86,7 +86,10 @@ def test_connectivity(host, timeout=5):
                               capture_output=True, text=True, timeout=timeout+2)
         
         # Debug output for troubleshooting
-        print(f"Ping result for {host}: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
+        print(f"Ping result for {host}: returncode={result.returncode}")
+        print(f"STDOUT: {result.stdout}")
+        print(f"STDERR: {result.stderr}")
+        print(f"Command executed: {ping_cmd} -c 1 -W 3 {host}")
         
         if result.returncode == 0:
             return {"ping": True, "error": None}
@@ -838,6 +841,38 @@ def get_passwords():
     
     result = list_all_passwords()
     return jsonify(result)
+
+@app.route('/api/debug_connectivity', methods=['POST'])
+def debug_connectivity():
+    """Debug endpoint to test connectivity directly"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+
+    data = request.get_json()
+    ip_address = data.get('ip_address')
+    
+    if not ip_address:
+        return jsonify({"error": "IP address required"}), 400
+    
+    print(f"Debug connectivity test for {ip_address}")
+    
+    # Test ping directly
+    try:
+        result = subprocess.run(['/usr/bin/ping', '-c', '1', '-W', '3', ip_address], 
+                              capture_output=True, text=True, timeout=7)
+        print(f"Direct ping result: returncode={result.returncode}")
+        print(f"Direct ping stdout: {result.stdout}")
+        print(f"Direct ping stderr: {result.stderr}")
+        
+        return jsonify({
+            "ping_returncode": result.returncode,
+            "ping_stdout": result.stdout,
+            "ping_stderr": result.stderr,
+            "ping_success": result.returncode == 0
+        })
+    except Exception as e:
+        print(f"Direct ping error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/change_admin_password', methods=['POST'])
 def change_admin_password():
