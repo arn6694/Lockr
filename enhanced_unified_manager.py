@@ -590,6 +590,9 @@ def retrieve_password_from_vault(server, username):
         ], capture_output=True, text=True, timeout=30)
         
         if result.returncode == 0:
+            # Update the timestamp for this password (last access)
+            update_password_timestamp(server, username)
+            
             return {
                 "success": True,
                 "password": result.stdout.strip(),
@@ -608,6 +611,18 @@ def retrieve_password_from_vault(server, username):
             "success": False,
             "error": f"Error retrieving password: {str(e)}"
         }
+
+def update_password_timestamp(server, username):
+    """Update the timestamp for a password"""
+    try:
+        timestamp_file = os.path.join(VAULT_DIR, f"{server}_{username}_timestamp")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(timestamp_file, 'w') as f:
+            f.write(current_time)
+        return True
+    except Exception as e:
+        app.logger.error(f"Error updating timestamp for {username}@{server}: {e}")
+        return False
 
 def list_all_passwords():
     """List all available passwords in the vault"""
@@ -629,17 +644,26 @@ def list_all_passwords():
                     with open(current_file, 'r') as f:
                         password_file = f.read().strip()
                     
-                    # Get file modification time
-                    if os.path.exists(password_file):
-                        mtime = os.path.getmtime(password_file)
-                        date_str = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
-                        
-                        passwords.append({
-                            "server": server,
-                            "username": username,
-                            "last_updated": date_str,
-                            "status": "active"
-                        })
+                    # Check if timestamp file exists for this password
+                    timestamp_file = os.path.join(VAULT_DIR, f"{server}_{username}_timestamp")
+                    if os.path.exists(timestamp_file):
+                        with open(timestamp_file, 'r') as f:
+                            timestamp_str = f.read().strip()
+                            last_updated = timestamp_str
+                    else:
+                        # Fallback to file modification time if no timestamp file
+                        if os.path.exists(password_file):
+                            mtime = os.path.getmtime(password_file)
+                            last_updated = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+                        else:
+                            last_updated = "Unknown"
+                    
+                    passwords.append({
+                        "server": server,
+                        "username": username,
+                        "last_updated": last_updated,
+                        "status": "active"
+                    })
         
         return {"success": True, "passwords": passwords}
         
@@ -1016,6 +1040,9 @@ def change_user_password():
         ssh.close()
         
         if password_changed:
+            # Update the timestamp for this password
+            update_password_timestamp(server_ip, username)
+            
             return jsonify({
                 "status": "success",
                 "message": f"Password for user '{username}' changed successfully on {server_ip}",
@@ -1078,6 +1105,9 @@ def create_password():
     result = create_vault_structure(server, username, new_password)
     
     if result['success']:
+        # Update the timestamp for this password
+        update_password_timestamp(server, username)
+        
         # Log the creation for audit purposes
         log_action(session['username'], 'create', server, username, 'success')
         
