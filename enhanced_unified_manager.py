@@ -137,19 +137,30 @@ def test_connectivity_socket(host, timeout=5):
 def test_ssh_connection(host, username, key_path, timeout=10):
     """Test SSH connection to a host"""
     try:
+        print(f"Testing SSH connection to {host} as user {username}")
+        print(f"Using key: {key_path}")
+        
         # Create SSH client
         ssh = paramiko.SSHClient()
         ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
         # Load private key
-        private_key = paramiko.Ed25519Key.from_private_key_file(key_path)
+        try:
+            private_key = paramiko.Ed25519Key.from_private_key_file(key_path)
+            print(f"Private key loaded successfully")
+        except Exception as key_error:
+            print(f"Failed to load private key: {key_error}")
+            return {"ssh": False, "error": f"Private key load failed: {str(key_error)}"}
         
         # Connect with timeout
+        print(f"Attempting SSH connection...")
         ssh.connect(host, username=username, pkey=private_key, timeout=timeout)
+        print(f"SSH connection established successfully")
         
         # Test basic command
         stdin, stdout, stderr = ssh.exec_command('whoami', timeout=5)
         user = stdout.read().decode().strip()
+        print(f"Remote user: {user}")
         
         ssh.close()
         
@@ -158,13 +169,17 @@ def test_ssh_connection(host, username, key_path, timeout=10):
         else:
             return {"ssh": False, "error": f"User mismatch: expected {username}, got {user}"}
             
-    except paramiko.AuthenticationException:
-        return {"ssh": False, "error": "SSH authentication failed"}
+    except paramiko.AuthenticationException as auth_error:
+        print(f"SSH authentication failed: {auth_error}")
+        return {"ssh": False, "error": f"SSH authentication failed: {str(auth_error)}"}
     except paramiko.SSHException as e:
+        print(f"SSH error: {e}")
         return {"ssh": False, "error": f"SSH error: {str(e)}"}
     except socket.timeout:
+        print(f"SSH connection timeout")
         return {"ssh": False, "error": "SSH connection timeout"}
     except Exception as e:
+        print(f"Unexpected SSH error: {e}")
         return {"ssh": False, "error": f"Connection error: {str(e)}"}
 
 def upload_and_execute_script(host, username, key_path, script_content):
@@ -478,13 +493,16 @@ def add_server():
                 "error": f"SSH private key not found: {SSH_KEY_PATH}. Please ensure your SSH key exists and update the SSH_KEY_PATH configuration."
             }), 400
         
-        # Test SSH connection
+        # Test SSH connection (this may fail for new servers without keys)
         ssh_result = test_ssh_connection(ip_address, SSH_USER, SSH_KEY_PATH)
-        if not ssh_result['ssh']:
-            return jsonify({
-                "success": False,
-                "error": f"SSH test failed: {ssh_result['error']}"
-            }), 400
+        ssh_available = ssh_result['ssh']
+        
+        if not ssh_available:
+            print(f"SSH not available for {ip_address}: {ssh_result['error']}")
+            print(f"This is normal for new servers. Proceeding with setup...")
+        
+        # For new servers, we'll need to use alternative methods to deploy SSH keys
+        # This could be via password authentication, cloud-init, or manual setup
         
         # Get the brian-install.sh script content
         script_content = """#!/bin/bash
@@ -533,8 +551,18 @@ if [ ! -f "${SUDOERS_FILE}" ]; then
 fi
 """
         
-        # Execute the script on the remote server
-        script_result = upload_and_execute_script(ip_address, SSH_USER, SSH_KEY_PATH, script_content)
+        # Handle server setup based on SSH availability
+        if ssh_available:
+            # Server already has SSH access, execute setup script
+            script_result = upload_and_execute_script(ip_address, SSH_USER, SSH_KEY_PATH, script_content)
+        else:
+            # Server doesn't have SSH access yet - need alternative setup method
+            # For now, we'll add it as a "pending setup" server
+            script_result = {
+                "success": True,
+                "message": "Server added but requires manual SSH key setup",
+                "setup_required": True
+            }
         
         if script_result['success']:
             # Add server to the list
@@ -544,8 +572,9 @@ fi
                 "ip": ip_address,
                 "status": "online",
                 "last_access": datetime.now().strftime("%Y-%m-%d %H:%M"),
-                "ssh_status": "connected",
-                "setup_date": datetime.now().isoformat()
+                "ssh_status": "connected" if ssh_available else "setup_required",
+                "setup_date": datetime.now().isoformat(),
+                "setup_required": not ssh_available
             }
             
             servers.append(new_server)
@@ -554,11 +583,25 @@ fi
             # Log the successful addition
             log_action(session['username'], 'add_server', hostname, ip_address, 'success')
             
-            return jsonify({
-                "success": True,
-                "message": f"Server {hostname} ({ip_address}) added successfully",
-                "server": new_server
-            })
+            if not ssh_available:
+                return jsonify({
+                    "success": True,
+                    "message": f"Server {hostname} ({ip_address}) added successfully but requires manual SSH key setup. Please add your public key to the server manually.",
+                    "server": new_server,
+                    "setup_required": True,
+                    "setup_instructions": [
+                        "1. SSH to the server using existing credentials",
+                        "2. Add your public key to ~/.ssh/authorized_keys",
+                        "3. Test SSH key authentication",
+                        "4. Use 'Test Connection' in Lockr to verify setup"
+                    ]
+                })
+            else:
+                return jsonify({
+                    "success": True,
+                    "message": f"Server {hostname} ({ip_address}) added successfully",
+                    "server": new_server
+                })
         else:
             return jsonify({
                 "success": False,
@@ -872,6 +915,32 @@ def debug_connectivity():
         })
     except Exception as e:
         print(f"Direct ping error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+@app.route('/api/debug_ssh', methods=['POST'])
+def debug_ssh():
+    """Debug endpoint to test SSH connection directly"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+
+    data = request.get_json()
+    ip_address = data.get('ip_address')
+    username = data.get('username', 'brian')
+    
+    if not ip_address:
+        return jsonify({"error": "IP address required"}), 400
+    
+    print(f"Debug SSH test for {username}@{ip_address}")
+    
+    # Test SSH connection directly
+    try:
+        from config import SSH_KEY_PATH
+        result = test_ssh_connection(ip_address, username, SSH_KEY_PATH, timeout=15)
+        print(f"SSH test result: {result}")
+        
+        return jsonify(result)
+    except Exception as e:
+        print(f"SSH test error: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/api/change_admin_password', methods=['POST'])
