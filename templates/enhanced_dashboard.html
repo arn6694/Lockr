@@ -145,6 +145,12 @@
             border-left-color: var(--danger-color);
         }
         
+        .server-card.setup-required {
+            border-left-color: var(--warning-color);
+            border-left-width: 6px;
+            box-shadow: 0 0 10px rgba(255, 193, 7, 0.3);
+        }
+        
         .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             border: none;
@@ -1027,7 +1033,7 @@
                                 <div class="row">
                                     {% for server in servers %}
                                     <div class="col-md-4 mb-3">
-                                        <div class="card server-card {{ 'offline' if server.status == 'offline' else '' }}">
+                                        <div class="card server-card {{ 'offline' if server.status == 'offline' else 'setup-required' if server.ssh_status == 'setup_required' else '' }}">
                                             <div class="card-body">
                                                 <div class="d-flex justify-content-between align-items-start mb-2">
                                                     <h6 class="card-title mb-0">
@@ -1047,12 +1053,21 @@
                                                     Last access: {{ server.last_access }}
                                                 </p>
                                                 {% if server.ssh_status %}
-                                                <p class="card-text text-muted mb-3">
+                                                <p class="card-text mb-3">
                                                     <i class="fas fa-terminal me-1"></i>
-                                                    SSH: {{ server.ssh_status }}
+                                                    SSH: 
+                                                    <span class="badge bg-{{ 'success' if server.ssh_status == 'connected' else 'warning' if server.ssh_status == 'setup_required' else 'secondary' }}">
+                                                        {{ server.ssh_status }}
+                                                    </span>
                                                 </p>
                                                 {% endif %}
                                                 <div class="btn-group w-100" role="group">
+                                                    {% if server.ssh_status == 'setup_required' %}
+                                                    <button class="btn btn-sm btn-warning" onclick="downloadSetupPackage('{{ server.name }}')">
+                                                        <i class="fas fa-download me-1"></i>
+                                                        Setup SSH
+                                                    </button>
+                                                    {% else %}
                                                     <button class="btn btn-sm btn-success" onclick="createPassword('{{ server.name }}', '')">
                                                         <i class="fas fa-plus me-1"></i>
                                                         Add Account
@@ -1065,6 +1080,7 @@
                                                         <i class="fas fa-list me-1"></i>
                                                         All Users
                                                     </button>
+                                                    {% endif %}
                                                 </div>
                                             </div>
                                         </div>
@@ -2865,6 +2881,60 @@
                         `);
                     }
                 }
+            });
+        }
+        
+        // Download setup package for servers requiring SSH setup
+        function downloadSetupPackage(serverName) {
+            showResult('Download Setup Package', `
+                <div class="alert alert-info">
+                    <strong>Preparing setup package for:</strong> ${serverName}<br>
+                    <div class="spinner-border spinner-border-sm" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Generating setup package with your SSH key...
+                </div>
+            `);
+            
+            // Call API to get setup package
+            fetch(`/api/download_setup_package/${serverName}`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showResult('Setup Package Ready', `
+                        <div class="alert alert-success">
+                            <strong>Setup package created successfully!</strong><br>
+                            <strong>Package:</strong> ${data.package_file}
+                        </div>
+                        <div class="alert alert-warning">
+                            <strong>Setup Instructions:</strong><br>
+                            ${data.download_instructions.map(instruction => `• ${instruction}`).join('<br>')}
+                        </div>
+                        <div class="mt-3">
+                            <button class="btn btn-warning" onclick="copySetupInstructions('${serverName}')">
+                                <i class="fas fa-copy me-1"></i>
+                                Copy Instructions
+                            </button>
+                            <button class="btn btn-info" onclick="showSetupHelp('${serverName}')">
+                                <i class="fas fa-question-circle me-1"></i>
+                                Setup Help
+                            </button>
+                        </div>
+                    `);
+                } else {
+                    showResult('Error', `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> ${data.error}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Error', `
+                    <div class="alert alert-danger">
+                        <strong>System Error:</strong> ${error.message}
+                    </div>
+                `);
             });
         }
         
