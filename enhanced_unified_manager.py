@@ -138,6 +138,189 @@ def test_connectivity_socket(host, timeout=5):
         print(f"Socket test error for {host}: {e}")
         return {"ping": False, "error": f"Socket test error: {str(e)}"}
 
+def try_alternative_server_setup(ip_address, hostname):
+    """Try alternative methods to set up a server without SSH keys"""
+    try:
+        print(f"Attempting alternative setup for {ip_address}")
+        
+        # Method 1: Try to detect if server has any existing SSH access
+        # This could be via password authentication, cloud-init, or other methods
+        
+        # Method 2: Generate setup instructions for manual deployment
+        setup_script = generate_brian_setup_script(ip_address)
+        
+        # Method 3: Create a setup package that can be deployed manually
+        setup_package = create_setup_package(ip_address, hostname, setup_script)
+        
+        return {
+            "success": True,
+            "message": f"Server {hostname} ({ip_address}) added successfully",
+            "setup_required": True,
+            "setup_method": "manual",
+            "setup_script": setup_script,
+            "setup_package": setup_package,
+            "instructions": [
+                "1. Download the setup package",
+                "2. Upload to the server using existing access method",
+                "3. Execute the setup script as root",
+                "4. Test SSH key authentication",
+                "5. Use 'Test Connection' in Lockr to verify setup"
+            ]
+        }
+        
+    except Exception as e:
+        print(f"Alternative setup failed for {ip_address}: {e}")
+        return {
+            "success": False,
+            "error": f"Alternative setup failed: {str(e)}"
+        }
+
+def generate_brian_setup_script(ip_address):
+    """Generate the brian setup script with current SSH public key"""
+    try:
+        # Read the current user's public key
+        public_key_path = SSH_KEY_PATH.replace('id_ed25519', 'id_ed25519.pub')
+        if not os.path.exists(public_key_path):
+            return None
+        
+        with open(public_key_path, 'r') as f:
+            ssh_key_content = f.read().strip()
+        
+        # Extract just the key part (remove the comment)
+        ssh_key = ssh_key_content.split()[1] if len(ssh_key_content.split()) > 1 else ssh_key_content
+        
+        # Generate the setup script
+        script_content = f"""#!/bin/bash
+set -e  # Exit immediately if any command exits with a non-zero status
+
+# Custom parameters for the brian account
+ADMIN_USER="brian"
+SSH_KEY="{ssh_key}"
+PUBKEY="ssh-ed25519 {ssh_key} brian@ser8"
+HOME_DIR="/home/${{ADMIN_USER}}"
+SUDOERS_FILE="/etc/sudoers.d/sudoers_${{ADMIN_USER}}"
+
+echo "Setting up brian user account on $(hostname)..."
+
+# Check if the user 'brian' exists; if not, create the user
+if ! grep -q "^${{ADMIN_USER}}:" /etc/passwd; then
+    echo "Creating local user ${{ADMIN_USER}}..."
+    useradd -d "${{HOME_DIR}}" -m -s /bin/bash ${{ADMIN_USER}}
+    passwd -l ${{ADMIN_USER}}
+fi
+
+# Ensure the .ssh directory exists for the user
+if [ ! -d "${{HOME_DIR}}/.ssh" ]; then
+    echo "Creating ${{HOME_DIR}}/.ssh directory..."
+    mkdir -p "${{HOME_DIR}}/.ssh"
+    chown -R ${{ADMIN_USER}}:${{ADMIN_USER}} "${{HOME_DIR}}"
+    chmod 700 "${{HOME_DIR}}/.ssh"
+fi  
+
+# Path to the authorized_keys file
+AUTHORIZED_KEYS="${{HOME_DIR}}/.ssh/authorized_keys"
+
+# Add the public key if it is not already present
+if [ ! -f "${{AUTHORIZED_KEYS}}" ] || ! grep -q "${{SSH_KEY}}" "${{AUTHORIZED_KEYS}}"; then
+    echo "Adding public key to ${{AUTHORIZED_KEYS}}..."
+    cat <<EOF >> "${{AUTHORIZED_KEYS}}"
+${{PUBKEY}}
+EOF
+    chown -R ${{ADMIN_USER}}:${{ADMIN_USER}} "${{HOME_DIR}}/.ssh"
+    chmod 600 "${{AUTHORIZED_KEYS}}"
+fi
+
+# Grant passwordless sudo privileges to the user
+if [ ! -f "${{SUDOERS_FILE}}" ]; then
+    echo "Setting up sudo for ${{ADMIN_USER}}..."
+    echo "${{ADMIN_USER}} ALL=(ALL) NOPASSWD: ALL" > "${{SUDOERS_FILE}}"
+    chmod 644 "${{SUDOERS_FILE}}"
+fi
+
+echo "Setup complete! User brian now has SSH key access and sudo privileges."
+echo "You can now SSH to this server using: ssh brian@{ip_address}"
+"""
+        
+        return script_content
+        
+    except Exception as e:
+        print(f"Failed to generate setup script: {e}")
+        return None
+
+def create_setup_package(ip_address, hostname, script_content):
+    """Create a setup package for manual deployment"""
+    try:
+        # Create a temporary directory for the setup package
+        package_dir = f"/tmp/lockr_setup_{hostname}_{int(time.time())}"
+        os.makedirs(package_dir, exist_ok=True)
+        
+        # Create the setup script
+        script_file = f"{package_dir}/setup_brian.sh"
+        with open(script_file, 'w') as f:
+            f.write(script_content)
+        
+        # Make it executable
+        os.chmod(script_file, 0o755)
+        
+        # Create a README with instructions
+        readme_content = f"""# Lockr Server Setup Package for {hostname}
+
+## Quick Setup Instructions
+
+1. **Upload this package** to your server using any available method:
+   - SCP/SFTP with existing credentials
+   - Web interface upload
+   - USB drive
+   - Cloud storage
+
+2. **Execute the setup script as root**:
+   ```bash
+   sudo ./setup_brian.sh
+   ```
+
+3. **Test SSH access**:
+   ```bash
+   ssh brian@{ip_address}
+   ```
+
+4. **Verify in Lockr**:
+   - Go to "Manage Servers"
+   - Use "Test Connection" on {hostname}
+   - Should show "SSH: connected"
+
+## What This Script Does
+
+- Creates user 'brian' if it doesn't exist
+- Sets up SSH key authentication
+- Grants sudo privileges
+- Configures proper file permissions
+
+## Security Notes
+
+- The script runs as root and modifies system files
+- Only run on servers you own/control
+- Review the script before execution
+"""
+        
+        readme_file = f"{package_dir}/README.md"
+        with open(readme_file, 'w') as f:
+            f.write(readme_content)
+        
+        # Create a compressed package
+        import tarfile
+        package_file = f"{package_dir}.tar.gz"
+        with tarfile.open(package_file, "w:gz") as tar:
+            tar.add(package_dir, arcname=os.path.basename(package_dir))
+        
+        # Clean up the temporary directory
+        shutil.rmtree(package_dir)
+        
+        return package_file
+        
+    except Exception as e:
+        print(f"Failed to create setup package: {e}")
+        return None
+
 def test_ssh_connection(host, username, key_path, timeout=10):
     """Test SSH connection to a host"""
     try:
@@ -580,13 +763,8 @@ fi
             # Server already has SSH access, execute setup script
             script_result = upload_and_execute_script(ip_address, SSH_USER, SSH_KEY_PATH, script_content)
         else:
-            # Server doesn't have SSH access yet - need alternative setup method
-            # For now, we'll add it as a "pending setup" server
-            script_result = {
-                "success": True,
-                "message": "Server added but requires manual SSH key setup",
-                "setup_required": True
-            }
+            # Server doesn't have SSH access yet - try alternative setup methods
+            script_result = try_alternative_server_setup(ip_address, hostname)
         
         if script_result['success']:
             # Add server to the list
@@ -992,6 +1170,49 @@ def debug_ssh():
     except Exception as e:
         print(f"SSH test error: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/download_setup_package/<hostname>')
+def download_setup_package(hostname):
+    """Download setup package for a server"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+    
+    try:
+        # Find the server in the servers list
+        servers = load_servers()
+        server = None
+        for s in servers:
+            if s.get('name') == hostname:
+                server = s
+                break
+        
+        if not server:
+            return jsonify({"error": f"Server {hostname} not found"}), 404
+        
+        # Generate the setup script
+        setup_script = generate_brian_setup_script(server['ip'])
+        if not setup_script:
+            return jsonify({"error": "Failed to generate setup script"}), 500
+        
+        # Create the setup package
+        package_file = create_setup_package(server['ip'], hostname, setup_script)
+        if not package_file:
+            return jsonify({"error": "Failed to create setup package"}), 500
+        
+        # Return the package file path for download
+        return jsonify({
+            "success": True,
+            "package_file": package_file,
+            "download_instructions": [
+                f"1. Download: {package_file}",
+                f"2. Upload to server {hostname} ({server['ip']})",
+                f"3. Extract and run: tar -xzf {os.path.basename(package_file)}",
+                f"4. Execute: sudo ./setup_brian.sh"
+            ]
+        })
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to create setup package: {str(e)}"}), 500
 
 @app.route('/api/change_admin_password', methods=['POST'])
 def change_admin_password():
