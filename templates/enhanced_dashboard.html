@@ -1630,15 +1630,13 @@
                         ${!hostname ? `<p class="text-info"><i class="fas fa-info-circle me-1"></i>Hostname "${finalHostname}" was auto-generated from IP address.</p>` : ''}
                     `);
                     
-                    // Close the modal and refresh the server list
+                    // Close the modal
                     bootstrap.Modal.getInstance(document.getElementById('addServerModal')).hide();
                     
-                    // Refresh the server management section
+                    // Show success message briefly, then refresh the page
                     setTimeout(() => {
-                        refreshServerManagement();
-                        // Also refresh the server select dropdowns in other modals
-                        refreshServerDropdowns();
-                    }, 1000);
+                        refreshPage();
+                    }, 2000);
                 } else {
                     showResult('Error Adding Server', `
                         <div class="alert alert-danger">
@@ -1801,16 +1799,10 @@
                     // Close the create modal
                     bootstrap.Modal.getInstance(document.getElementById('createPasswordModal')).hide();
                     
-                    // Refresh password count and server management
-                    loadPasswordCount();
-                    refreshServerManagement();
-                    
-                    // Clear the user validation result
-                    const userValidationResult = document.getElementById('userValidationResult');
-                    if (userValidationResult) {
-                        userValidationResult.style.display = 'none';
-                        userValidationResult.innerHTML = '';
-                    }
+                    // Show success message briefly, then refresh the page
+                    setTimeout(() => {
+                        refreshPage();
+                    }, 2000);
                 } else {
                     showResult('Error Creating Password', `
                         <div class="alert alert-danger">
@@ -1895,7 +1887,7 @@
                         
                         // Auto-refresh after 3 seconds
                         setTimeout(() => {
-                            refreshAfterPasswordChange();
+                            refreshPage();
                         }, 3000);
                     } else {
                         showResult('Error Changing Password', `
@@ -2918,9 +2910,9 @@
                         </div>
                     `);
                     
-                    // Refresh the server status to show the updated SSH status
+                    // Refresh the page to show the updated SSH status
                     setTimeout(() => {
-                        refreshServerStatus();
+                        refreshPage();
                     }, 2000);
                 } else {
                     showResult('SSH Setup Failed', `
@@ -2986,18 +2978,10 @@
                             </div>
                         `);
                         
-                        // Immediately refresh the server management section
-                        refreshServerManagement();
-                        
-                        // Close the result modal after 3 seconds and refresh again
+                        // Show success message briefly, then refresh the page
                         setTimeout(() => {
-                            const resultModal = bootstrap.Modal.getInstance(document.getElementById('resultModal'));
-                            if (resultModal) {
-                                resultModal.hide();
-                            }
-                            // Refresh one more time to ensure the list is current
-                            refreshServerManagement();
-                        }, 3000);
+                            refreshPage();
+                        }, 2000);
                     } else {
                         showResult('Error', `
                             <div class="alert alert-danger">
@@ -3073,6 +3057,39 @@
                     `);
                 }
             });
+        }
+        
+        // Comprehensive page refresh function
+        function refreshPage() {
+            // Show loading state
+            const loadingOverlay = document.createElement('div');
+            loadingOverlay.id = 'loadingOverlay';
+            loadingOverlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 9999;
+            `;
+            loadingOverlay.innerHTML = `
+                <div class="text-center text-white">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <div class="mt-3">Refreshing page...</div>
+                </div>
+            `;
+            document.body.appendChild(loadingOverlay);
+            
+            // Reload page after a short delay
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
         }
         
         // Refresh server status
