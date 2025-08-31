@@ -1063,9 +1063,9 @@
                                                 {% endif %}
                                                 <div class="btn-group w-100" role="group">
                                                     {% if server.ssh_status == 'setup_required' %}
-                                                    <button class="btn btn-sm btn-warning" onclick="downloadSetupPackage('{{ server.name }}')">
-                                                        <i class="fas fa-download me-1"></i>
-                                                        Setup SSH
+                                                    <button class="btn btn-sm btn-warning" onclick="retryServerSetup('{{ server.name }}')">
+                                                        <i class="fas fa-sync-alt me-1"></i>
+                                                        Retry SSH Setup
                                                     </button>
                                                     {% else %}
                                                     <button class="btn btn-sm btn-success" onclick="createPassword('{{ server.name }}', '')">
@@ -2884,47 +2884,53 @@
             });
         }
         
-        // Download setup package for servers requiring SSH setup
-        function downloadSetupPackage(serverName) {
-            showResult('Download Setup Package', `
+        // Retry SSH setup for servers requiring SSH setup
+        function retryServerSetup(serverName) {
+            showResult('Retrying SSH Setup', `
                 <div class="alert alert-info">
-                    <strong>Preparing setup package for:</strong> ${serverName}<br>
+                    <strong>Retrying SSH setup for:</strong> ${serverName}<br>
                     <div class="spinner-border spinner-border-sm" role="status">
                         <span class="visually-hidden">Loading...</span>
                     </div>
-                    Generating setup package with your SSH key...
+                    Executing brian-install.sh on central server...
                 </div>
             `);
             
-            // Call API to get setup package
-            fetch(`/api/download_setup_package/${serverName}`)
+            // Call API to retry SSH setup
+            fetch(`/api/retry_server_setup/${serverName}`)
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    showResult('Setup Package Ready', `
+                    showResult('SSH Setup Completed', `
                         <div class="alert alert-success">
-                            <strong>Setup package created successfully!</strong><br>
-                            <strong>Package:</strong> ${data.package_file}
+                            <strong>SSH setup completed successfully!</strong><br>
+                            Server ${serverName} now has SSH access configured.
                         </div>
-                        <div class="alert alert-warning">
-                            <strong>Setup Instructions:</strong><br>
-                            ${data.download_instructions.map(instruction => `• ${instruction}`).join('<br>')}
+                        <div class="alert alert-info">
+                            <strong>Details:</strong><br>
+                            ${data.details}
                         </div>
                         <div class="mt-3">
-                            <button class="btn btn-warning" onclick="copySetupInstructions('${serverName}')">
-                                <i class="fas fa-copy me-1"></i>
-                                Copy Instructions
-                            </button>
-                            <button class="btn btn-info" onclick="showSetupHelp('${serverName}')">
-                                <i class="fas fa-question-circle me-1"></i>
-                                Setup Help
+                            <button class="btn btn-success" onclick="refreshServerStatus()">
+                                <i class="fas fa-refresh me-1"></i>
+                                Refresh Status
                             </button>
                         </div>
                     `);
+                    
+                    // Refresh the server status to show the updated SSH status
+                    setTimeout(() => {
+                        refreshServerStatus();
+                    }, 2000);
                 } else {
-                    showResult('Error', `
+                    showResult('SSH Setup Failed', `
                         <div class="alert alert-danger">
-                            <strong>Error:</strong> ${data.error}
+                            <strong>SSH setup failed:</strong><br>
+                            ${data.error}
+                        </div>
+                        <div class="alert alert-warning">
+                            <strong>Details:</strong><br>
+                            ${data.details ? JSON.stringify(data.details, null, 2) : 'No additional details available'}
                         </div>
                     `);
                 }

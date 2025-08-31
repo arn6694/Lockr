@@ -139,40 +139,46 @@ def test_connectivity_socket(host, timeout=5):
         return {"ping": False, "error": f"Socket test error: {str(e)}"}
 
 def try_alternative_server_setup(ip_address, hostname):
-    """Try alternative methods to set up a server without SSH keys"""
+    """Automatically execute brian-install.sh on central server to set up new server"""
     try:
-        print(f"Attempting alternative setup for {ip_address}")
+        print(f"Executing brian-install.sh on central server for {ip_address}")
         
-        # Method 1: Try to detect if server has any existing SSH access
-        # This could be via password authentication, cloud-init, or other methods
+        # Execute the setup script on the central server (10.10.10.96)
+        # This server should have access to all other servers and your SSH keys
+        central_server_ip = "10.10.10.96"
         
-        # Method 2: Generate setup instructions for manual deployment
+        # Generate the setup script content
         setup_script = generate_brian_setup_script(ip_address)
         
-        # Method 3: Create a setup package that can be deployed manually
-        setup_package = create_setup_package(ip_address, hostname, setup_script)
+        # Execute the script on the central server
+        script_result = execute_setup_on_central_server(central_server_ip, ip_address, hostname, setup_script)
         
-        return {
-            "success": True,
-            "message": f"Server {hostname} ({ip_address}) added successfully",
-            "setup_required": True,
-            "setup_method": "manual",
-            "setup_script": setup_script,
-            "setup_package": setup_package,
-            "instructions": [
-                "1. Download the setup package",
-                "2. Upload to the server using existing access method",
-                "3. Execute the setup script as root",
-                "4. Test SSH key authentication",
-                "5. Use 'Test Connection' in Lockr to verify setup"
-            ]
-        }
+        if script_result['success']:
+            return {
+                "success": True,
+                "message": f"Server {hostname} ({ip_address}) added and SSH setup completed automatically",
+                "setup_required": False,
+                "setup_method": "automatic",
+                "details": f"Setup script executed on central server {central_server_ip}"
+            }
+        else:
+            return {
+                "success": True,
+                "message": f"Server {hostname} ({ip_address}) added but SSH setup failed",
+                "setup_required": True,
+                "setup_method": "failed",
+                "error": script_result['error'],
+                "details": f"Setup script failed on central server {central_server_ip}"
+            }
         
     except Exception as e:
         print(f"Alternative setup failed for {ip_address}: {e}")
         return {
-            "success": False,
-            "error": f"Alternative setup failed: {str(e)}"
+            "success": True,
+            "message": f"Server {hostname} ({ip_address}) added successfully",
+            "setup_required": True,
+            "setup_method": "error",
+            "error": str(e)
         }
 
 def generate_brian_setup_script(ip_address):
@@ -247,79 +253,89 @@ echo "You can now SSH to this server using: ssh brian@{ip_address}"
         print(f"Failed to generate setup script: {e}")
         return None
 
-def create_setup_package(ip_address, hostname, script_content):
-    """Create a setup package for manual deployment"""
+def execute_setup_on_central_server(central_server_ip, target_server_ip, hostname, script_content):
+    """Execute the setup script on the central server to configure the target server"""
     try:
-        # Create a temporary directory for the setup package
-        package_dir = f"/tmp/lockr_setup_{hostname}_{int(time.time())}"
-        os.makedirs(package_dir, exist_ok=True)
+        print(f"Executing setup on central server {central_server_ip} for target {target_server_ip}")
         
-        # Create the setup script
-        script_file = f"{package_dir}/setup_brian.sh"
-        with open(script_file, 'w') as f:
-            f.write(script_content)
+        # Create SSH client to connect to central server
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         
-        # Make it executable
-        os.chmod(script_file, 0o755)
+        # Load private key for central server access
+        if not os.path.exists(SSH_KEY_PATH):
+            return {
+                "success": False,
+                "error": f"SSH key not found: {SSH_KEY_PATH}"
+            }
         
-        # Create a README with instructions
-        readme_content = f"""# Lockr Server Setup Package for {hostname}
-
-## Quick Setup Instructions
-
-1. **Upload this package** to your server using any available method:
-   - SCP/SFTP with existing credentials
-   - Web interface upload
-   - USB drive
-   - Cloud storage
-
-2. **Execute the setup script as root**:
-   ```bash
-   sudo ./setup_brian.sh
-   ```
-
-3. **Test SSH access**:
-   ```bash
-   ssh brian@{ip_address}
-   ```
-
-4. **Verify in Lockr**:
-   - Go to "Manage Servers"
-   - Use "Test Connection" on {hostname}
-   - Should show "SSH: connected"
-
-## What This Script Does
-
-- Creates user 'brian' if it doesn't exist
-- Sets up SSH key authentication
-- Grants sudo privileges
-- Configures proper file permissions
-
-## Security Notes
-
-- The script runs as root and modifies system files
-- Only run on servers you own/control
-- Review the script before execution
-"""
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
         
-        readme_file = f"{package_dir}/README.md"
-        with open(readme_file, 'w') as f:
-            f.write(readme_content)
+        # Connect to central server
+        ssh.connect(central_server_ip, username=SSH_USER, pkey=private_key, timeout=15)
         
-        # Create a compressed package
-        import tarfile
-        package_file = f"{package_dir}.tar.gz"
-        with tarfile.open(package_file, "w:gz") as tar:
-            tar.add(package_dir, arcname=os.path.basename(package_dir))
+        # Create the setup script on the central server
+        script_file = f"/tmp/setup_{hostname}_{int(time.time())}.sh"
         
-        # Clean up the temporary directory
-        shutil.rmtree(package_dir)
+        # Upload script content
+        stdin, stdout, stderr = ssh.exec_command(f"cat > {script_file} << 'EOF'\n{script_content}\nEOF", timeout=30)
+        exit_status = stdout.channel.recv_exit_status()
         
-        return package_file
+        if exit_status != 0:
+            ssh.close()
+            return {
+                "success": False,
+                "error": f"Failed to create script on central server: {stderr.read().decode()}"
+            }
+        
+        # Make script executable
+        stdin, stdout, stderr = ssh.exec_command(f"chmod +x {script_file}", timeout=10)
+        exit_status = stdout.channel.recv_exit_status()
+        
+        if exit_status != 0:
+            ssh.close()
+            return {
+                "success": False,
+                "error": f"Failed to make script executable: {stderr.read().decode()}"
+            }
+        
+        # Execute the setup script on the central server
+        # This script will handle the SSH setup for the target server
+        setup_command = f"sudo {script_file}"
+        stdin, stdout, stderr = ssh.exec_command(setup_command, timeout=120)
+        exit_status = stdout.channel.recv_exit_status()
+        
+        # Get output
+        stdout_content = stdout.read().decode()
+        stderr_content = stderr.read().decode()
+        
+        # Clean up script file
+        ssh.exec_command(f"rm -f {script_file}", timeout=10)
+        
+        ssh.close()
+        
+        if exit_status == 0:
+            return {
+                "success": True,
+                "message": f"Setup completed successfully on {target_server_ip}",
+                "output": stdout_content,
+                "central_server": central_server_ip
+            }
+        else:
+            return {
+                "success": False,
+                "error": f"Setup failed on {target_server_ip}",
+                "output": stdout_content,
+                "error_output": stderr_content,
+                "exit_code": exit_status,
+                "central_server": central_server_ip
+            }
         
     except Exception as e:
-        print(f"Failed to create setup package: {e}")
-        return None
+        return {
+            "success": False,
+            "error": f"Failed to execute setup on central server: {str(e)}"
+        }
 
 def test_ssh_connection(host, username, key_path, timeout=10):
     """Test SSH connection to a host"""
@@ -1171,9 +1187,9 @@ def debug_ssh():
         print(f"SSH test error: {e}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('/api/download_setup_package/<hostname>')
-def download_setup_package(hostname):
-    """Download setup package for a server"""
+@app.route('/api/retry_server_setup/<hostname>')
+def retry_server_setup(hostname):
+    """Retry SSH setup for a server that failed initial setup"""
     if 'authenticated' not in session:
         return jsonify({"error": "Unauthorized"}), 400
     
@@ -1194,25 +1210,33 @@ def download_setup_package(hostname):
         if not setup_script:
             return jsonify({"error": "Failed to generate setup script"}), 500
         
-        # Create the setup package
-        package_file = create_setup_package(server['ip'], hostname, setup_script)
-        if not package_file:
-            return jsonify({"error": "Failed to create setup package"}), 500
+        # Execute setup on central server
+        central_server_ip = "10.10.10.96"
+        script_result = execute_setup_on_central_server(central_server_ip, server['ip'], hostname, setup_script)
         
-        # Return the package file path for download
-        return jsonify({
-            "success": True,
-            "package_file": package_file,
-            "download_instructions": [
-                f"1. Download: {package_file}",
-                f"2. Upload to server {hostname} ({server['ip']})",
-                f"3. Extract and run: tar -xzf {os.path.basename(package_file)}",
-                f"4. Execute: sudo ./setup_brian.sh"
-            ]
-        })
+        if script_result['success']:
+            # Update server status to connected
+            for s in servers:
+                if s.get('name') == hostname:
+                    s['ssh_status'] = 'connected'
+                    s['setup_required'] = False
+                    break
+            save_servers(servers)
+            
+            return jsonify({
+                "success": True,
+                "message": f"SSH setup completed successfully for {hostname}",
+                "details": script_result['message']
+            })
+        else:
+            return jsonify({
+                "success": False,
+                "error": f"SSH setup failed: {script_result['error']}",
+                "details": script_result
+            }), 500
         
     except Exception as e:
-        return jsonify({"error": f"Failed to create setup package: {str(e)}"}), 500
+        return jsonify({"error": f"Failed to retry setup: {str(e)}"}), 500
 
 @app.route('/api/change_admin_password', methods=['POST'])
 def change_admin_password():
