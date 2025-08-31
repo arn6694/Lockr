@@ -94,8 +94,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Versioning Strategy
 
-- **0.9**: Current development version
-- **0.91, 0.92, etc.**: Incremental updates and bug fixes
+- **0.9**: Previous development version
+- **0.91**: Systemd service integration
+- **0.92**: Current version - SSH setup and password management fixes
+- **0.93, 0.94, etc.**: Incremental updates and bug fixes
 - **1.0**: Production release for boss presentation
 - **1.1, 1.2, etc.**: Post-production feature updates
 
