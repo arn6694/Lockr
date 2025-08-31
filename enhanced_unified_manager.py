@@ -21,12 +21,16 @@ import time
 app = Flask(__name__)
 app.secret_key = secrets.token_hex(32)
 
-# Configuration - adjust these paths to match your system
-VAULT_DIR = "/home/brian/playbooks/vault"
-VAULT_KEY = "/home/brian/playbooks/.vault_key"
-ANSIBLE_VAULT_CMD = "ansible-vault"
-SSH_KEY_PATH = "/home/brian/.ssh/id_ed25519"  # Your private SSH key
-SSH_USER = "brian"  # Your SSH username
+# Import configuration
+try:
+    from config import *
+except ImportError:
+    # Fallback configuration if config.py is not available
+    VAULT_DIR = "/home/brian/playbooks/vault"
+    VAULT_KEY = "/home/brian/playbooks/.vault_key"
+    ANSIBLE_VAULT_CMD = "/usr/bin/ansible-vault"  # Use full path
+    SSH_KEY_PATH = "/home/brian/.ssh/id_ed25519"
+    SSH_USER = "brian"
 
 # Ensure required directories exist
 os.makedirs(VAULT_DIR, exist_ok=True)
@@ -311,8 +315,20 @@ def create_vault_structure(server, username, password):
         
         # Encrypt with Ansible Vault
         encrypted_file = f"{vault_dir}/password.txt.vault"
+        
+        # Try multiple possible ansible-vault locations
+        vault_cmd = ANSIBLE_VAULT_CMD
+        if vault_cmd == "ansible-vault":
+            # Try to find the full path
+            for possible_path in ['/usr/bin/ansible-vault', '/usr/local/bin/ansible-vault', 'ansible-vault']:
+                if os.path.exists(possible_path) or possible_path == 'ansible-vault':
+                    vault_cmd = possible_path
+                    break
+        
+        print(f"Using ansible-vault command: {vault_cmd}")
+        
         result = subprocess.run([
-            ANSIBLE_VAULT_CMD, "encrypt", password_file,
+            vault_cmd, "encrypt", password_file,
             "--vault-password-file", VAULT_KEY,
             "--output", encrypted_file
         ], capture_output=True, text=True, timeout=30)
@@ -366,8 +382,16 @@ def retrieve_password_from_vault(server, username):
             }
         
         # Decrypt with Ansible Vault
+        vault_cmd = ANSIBLE_VAULT_CMD
+        if vault_cmd == "ansible-vault":
+            # Try to find the full path
+            for possible_path in ['/usr/bin/ansible-vault', '/usr/local/bin/ansible-vault', 'ansible-vault']:
+                if os.path.exists(possible_path) or possible_path == 'ansible-vault':
+                    vault_cmd = possible_path
+                    break
+        
         result = subprocess.run([
-            ANSIBLE_VAULT_CMD, "decrypt", encrypted_file,
+            vault_cmd, "decrypt", encrypted_file,
             "--vault-password-file", VAULT_KEY,
             "--output", "-"
         ], capture_output=True, text=True, timeout=30)
