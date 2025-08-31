@@ -81,12 +81,24 @@ def test_connectivity(host, timeout=5):
         if not ping_cmd:
             return test_connectivity_socket(host, timeout)
         
-        result = subprocess.run([ping_cmd, '-c', '1', '-W', str(timeout), host], 
+        # Use more lenient ping parameters for better compatibility
+        result = subprocess.run([ping_cmd, '-c', '1', '-W', '3', host], 
                               capture_output=True, text=True, timeout=timeout+2)
+        
+        # Debug output for troubleshooting
+        print(f"Ping result for {host}: returncode={result.returncode}, stdout={result.stdout}, stderr={result.stderr}")
+        
         if result.returncode == 0:
             return {"ping": True, "error": None}
         else:
-            return {"ping": False, "error": "Host unreachable"}
+            # Check if it's actually unreachable or just slow
+            if "100% packet loss" in result.stdout or "100% packet loss" in result.stderr:
+                return {"ping": False, "error": "Host unreachable"}
+            elif "timeout" in result.stdout.lower() or "timeout" in result.stderr.lower():
+                return {"ping": False, "error": "Ping timeout"}
+            else:
+                # Try socket test as fallback
+                return test_connectivity_socket(host, timeout)
     except subprocess.TimeoutExpired:
         return {"ping": False, "error": "Ping timeout"}
     except FileNotFoundError:
@@ -107,12 +119,16 @@ def test_connectivity_socket(host, timeout=5):
                 result = sock.connect_ex((host, port))
                 sock.close()
                 if result == 0:
+                    print(f"Socket test successful for {host}:{port}")
                     return {"ping": True, "error": None, "method": f"port {port}"}
-            except:
+            except Exception as port_error:
+                print(f"Socket test failed for {host}:{port} - {port_error}")
                 continue
         
+        print(f"All socket tests failed for {host}")
         return {"ping": False, "error": "No accessible ports found"}
     except Exception as e:
+        print(f"Socket test error for {host}: {e}")
         return {"ping": False, "error": f"Socket test error: {str(e)}"}
 
 def test_ssh_connection(host, username, key_path, timeout=10):
