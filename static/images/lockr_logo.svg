@@ -1,0 +1,48 @@
+<svg width="200" height="80" viewBox="0 0 200 80" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background gradient definitions -->
+  <defs>
+    <!-- Blue gradient for "Lockr" text -->
+    <linearGradient id="lockrGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00d4ff;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0099cc;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Green gradient for "Enterprise" text -->
+    <linearGradient id="enterpriseGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
+    </linearGradient>
+    
+    <!-- Green gradient for padlock elements -->
+    <linearGradient id="padlockGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#00cc66;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Padlock Icon -->
+  <!-- Padlock body (shield shape) -->
+  <path d="M25 15 L25 35 Q25 45 35 45 L45 45 Q55 45 55 35 L55 15 Z" 
+        fill="#2a2a2a" stroke="#404040" stroke-width="1"/>
+  
+  <!-- Padlock shackle (curved top) -->
+  <path d="M30 15 Q30 5 40 5 Q50 5 50 15" 
+        fill="none" stroke="url(#padlockGradient)" stroke-width="4" stroke-linecap="round"/>
+  
+  <!-- Command prompt symbol inside padlock -->
+  <text x="35" y="32" font-family="monospace" font-size="12" fill="url(#padlockGradient)">
+    >_
+  </text>
+  
+  <!-- "Lockr" text -->
+  <text x="70" y="35" font-family="'Courier New', monospace" font-size="24" font-weight="bold" 
+        fill="url(#lockrGradient)" style="text-shadow: 0 0 10px rgba(0, 212, 255, 0.3);">
+    Lockr
+  </text>
+  
+  <!-- "Enterprise" text -->
+  <text x="70" y="55" font-family="'Courier New', monospace" font-size="14" font-weight="bold" 
+        fill="url(#enterpriseGradient)" style="text-shadow: 0 0 8px rgba(0, 255, 136, 0.3);">
+    Enterprise
+  </text>
+</svg>

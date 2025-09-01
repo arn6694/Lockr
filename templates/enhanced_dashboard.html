@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
                     <title>Lockr - Enterprise Server & Password Management</title>
+    <link rel="icon" type="image/svg+xml" href="/static/images/lockr_logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <style>
@@ -322,9 +323,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container-fluid">
             <a class="navbar-brand" href="#" onclick="showDashboardOverview()">
-                <i class="fas fa-lock me-2"></i>
-                <strong>Lockr</strong>
-                <small class="ms-2 text-white-50">Enterprise</small>
+                <img src="/static/images/lockr_logo.svg" alt="Lockr Enterprise" style="height: 40px; width: auto; margin-right: 10px;">
             </a>
             <div class="navbar-nav ms-auto">
                 <span class="navbar-text me-3">
@@ -352,6 +351,11 @@
             <!-- Sidebar -->
             <nav class="col-md-3 col-lg-2 d-md-block sidebar">
                 <div class="position-sticky pt-3">
+                    <!-- Sidebar Logo -->
+                    <div class="text-center mb-4">
+                        <img src="/static/images/lockr_logo.svg" alt="Lockr Enterprise" style="max-width: 120px; height: auto; filter: brightness(0) invert(1);">
+                    </div>
+                    
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link active" href="#" onclick="showDashboardOverview()">
@@ -1005,7 +1009,7 @@
                                         <div class="text-xs font-weight-bold text-uppercase mb-1">
                                             Last Update
                                         </div>
-                                        <div class="h6 mb-0 font-weight-bold">2 min ago</div>
+                                        <div class="h6 mb-0 font-weight-bold" id="lastUpdateTime">Loading...</div>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-clock fa-2x text-white-50"></i>
@@ -1991,6 +1995,9 @@
                     // Close the create modal
                     bootstrap.Modal.getInstance(document.getElementById('createPasswordModal')).hide();
                     
+                    // Update the last update timestamp
+                    updateLastUpdateTime();
+                    
                     // Show success message briefly, then refresh the page
                     setTimeout(() => {
                         refreshPage();
@@ -2076,6 +2083,9 @@
                                 </button>
                             </div>
                         `);
+                        
+                        // Update the last update timestamp
+                        updateLastUpdateTime();
                         
                         // Auto-refresh after 3 seconds
                         setTimeout(() => {
@@ -2361,6 +2371,9 @@
                     document.getElementById('createPasswordFormInline').reset();
                     document.getElementById('userValidationResultInline').style.display = 'none';
                     
+                    // Update the last update timestamp
+                    updateLastUpdateTime();
+                    
                     // Refresh data
                     loadPasswordCount();
                     refreshServerManagement();
@@ -2429,6 +2442,9 @@
                             <strong>Timestamp:</strong> ${new Date(data.timestamp).toLocaleString()}
                         </div>
                     `);
+                    
+                    // Update the last update timestamp
+                    updateLastUpdateTime();
                     
                     // Clear form
                     document.getElementById('retrievePasswordFormInline').reset();
@@ -2697,6 +2713,9 @@
                     
                     // Close the retrieve modal
                     bootstrap.Modal.getInstance(document.getElementById('retrievePasswordModal')).hide();
+                    
+                    // Update the last update timestamp
+                    updateLastUpdateTime();
                     
                     // Refresh password count and server management
                     loadPasswordCount();
@@ -3466,6 +3485,65 @@
                 location.reload();
             }, 1000);
         }
+        
+        // Update last update timestamp with real data
+        function updateLastUpdateTime() {
+            const lastUpdateElement = document.getElementById('lastUpdateTime');
+            if (lastUpdateElement) {
+                // Get the actual last update time from password data
+                fetch('/api/list_passwords')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.passwords.length > 0) {
+                        // Find the most recent password update
+                        let mostRecent = null;
+                        data.passwords.forEach(pwd => {
+                            if (pwd.last_updated && pwd.last_updated !== 'Unknown') {
+                                const updateTime = new Date(pwd.last_updated);
+                                if (!mostRecent || updateTime > mostRecent) {
+                                    mostRecent = updateTime;
+                                }
+                            }
+                        });
+                        
+                        if (mostRecent) {
+                            const now = new Date();
+                            const timeDiff = now.getTime() - mostRecent.getTime();
+                            
+                            let timeString;
+                            if (timeDiff < 60000) { // Less than 1 minute
+                                timeString = 'Just now';
+                            } else if (timeDiff < 3600000) { // Less than 1 hour
+                                const minutes = Math.floor(timeDiff / 60000);
+                                timeString = `${minutes} min ago`;
+                            } else if (timeDiff < 86400000) { // Less than 1 day
+                                const hours = Math.floor(timeDiff / 3600000);
+                                timeString = `${hours} hour${hours > 1 ? 's' : ''} ago`;
+                            } else {
+                                const days = Math.floor(timeDiff / 86400000);
+                                timeString = `${days} day${days > 1 ? 's' : ''} ago`;
+                            }
+                            
+                            lastUpdateElement.textContent = timeString;
+                        } else {
+                            lastUpdateElement.textContent = 'No recent updates';
+                        }
+                    } else {
+                        lastUpdateElement.textContent = 'No passwords found';
+                    }
+                })
+                .catch(error => {
+                    lastUpdateElement.textContent = 'Error loading';
+                    console.error('Error updating timestamp:', error);
+                });
+            }
+        }
+        
+        // Update timestamp every 30 seconds
+        setInterval(updateLastUpdateTime, 30000);
+        
+        // Initial update
+        updateLastUpdateTime();
     </script>
 </body>
 </html>

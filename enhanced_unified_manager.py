@@ -18,7 +18,7 @@ import socket
 import threading
 import time
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 app.secret_key = secrets.token_hex(32)
 
 # Configure session to be more persistent
