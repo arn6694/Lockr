@@ -1427,6 +1427,61 @@ def health_check_all():
             "error": f"Health check failed: {str(e)}"
         }), 500
 
+@app.route('/api/health_check_targeted', methods=['POST'])
+def health_check_targeted():
+    """API endpoint to perform health check on specific servers only"""
+    if 'authenticated' not in session:
+        return jsonify({"error": "Unauthorized"}), 400
+
+    data = request.get_json()
+    target_servers = data.get('servers', [])
+    
+    if not target_servers:
+        return jsonify({"error": "No servers specified"}), 400
+    
+    try:
+        all_health_results = []
+        
+        for server_data in target_servers:
+            server_ip = server_data.get('ip')
+            server_name = server_data.get('server', 'Unknown')
+            
+            if server_ip:
+                health_result = perform_health_check(server_ip, server_name)
+                all_health_results.append(health_result)
+        
+        # Update server statuses in the stored servers list
+        servers = load_servers()
+        for i, server in enumerate(servers):
+            for health_result in all_health_results:
+                if server['ip'] == health_result['ip']:
+                    if health_result['overall_status'] == 'healthy':
+                        servers[i]['status'] = 'online'
+                    elif health_result['overall_status'] == 'degraded':
+                        servers[i]['status'] = 'degraded'
+                    else:
+                        servers[i]['status'] = 'offline'
+                    break
+        
+        # Save updated server statuses
+        save_servers(servers)
+        
+        return jsonify({
+            "success": True,
+            "health_results": all_health_results,
+            "summary": {
+                "total_checked": len(all_health_results),
+                "healthy": len([s for s in all_health_results if s['overall_status'] == 'healthy']),
+                "degraded": len([s for s in all_health_results if s['overall_status'] == 'degraded']),
+                "unhealthy": len([s for s in all_health_results if s['overall_status'] == 'unhealthy'])
+            }
+        })
+    except Exception as e:
+        return jsonify({
+            "success": False,
+            "error": f"Targeted health check failed: {str(e)}"
+        }), 500
+
 @app.route('/api/debug_connectivity', methods=['POST'])
 def debug_connectivity():
     """Debug endpoint to test connectivity directly"""

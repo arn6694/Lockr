@@ -42,3 +42,4 @@ if [ ! -f "${SUDOERS_FILE}" ]; then
     echo "${ADMIN_USER} ALL=(ALL) NOPASSWD: ALL" > "${SUDOERS_FILE}"
     chmod 644 "${SUDOERS_FILE}"
 fi
+

@@ -5,6 +5,24 @@ All notable changes to Lockr will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.95] - 2025-01-27
+
+### Added
+- **Targeted Health Check System**: Smart health check functionality that only checks degraded servers
+- **Enhanced Health Check Modal**: Improved degraded servers modal with better error handling
+- **New API Endpoint**: `/api/health_check_targeted` for checking specific servers only
+
+### Technical Improvements
+- **Optimized Health Check Performance**: Re-run health check now only processes degraded servers instead of all servers
+- **Better Error Handling**: Fixed "Unexpected token '<'" error in health check details modal
+- **Improved User Experience**: Loading messages now show exactly which servers are being checked
+- **API Method Consistency**: Fixed GET vs POST method mismatch in health check endpoints
+
+### Fixed
+- **Health Check Modal Loading**: Fixed JavaScript errors when loading degraded server details
+- **Re-run Health Check Button**: Now properly targets only degraded servers instead of all servers
+- **Response Structure Mismatch**: Corrected API response property access in frontend code
+
 ## [0.94] - 2025-08-31
 
 ### Added

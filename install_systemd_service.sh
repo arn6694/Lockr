@@ -101,3 +101,4 @@ echo -e "${YELLOW}  Enable:  sudo systemctl enable lockr${NC}"
 echo -e "${YELLOW}  Disable: sudo systemctl disable lockr${NC}"
 
 echo -e "${BLUE}🚀 The service will automatically start on boot!${NC}"
+

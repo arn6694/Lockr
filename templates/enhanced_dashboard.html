@@ -7,6 +7,7 @@
     <link rel="icon" type="image/svg+xml" href="/static/images/lockr_logo.svg">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
             --primary-color: #667eea;
@@ -68,6 +69,170 @@
             background-color: #1a1a1a;
         }
         
+        /* Lockr Header Styles */
+        .lockr-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px;
+            background-color: #0b0b0b;
+            border-bottom: 1px solid #222;
+            flex-wrap: wrap;
+        }
+
+        .lockr-logo {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .lock-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            align-self: flex-start;
+            margin-top: 8px;
+        }
+
+        .lock-icon svg {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 153, 0.2));
+        }
+
+        .lock-icon:hover svg {
+            transform: scale(1.05);
+            filter: drop-shadow(0 0 15px rgba(0, 255, 153, 0.4));
+        }
+
+        .lockr-text {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 60px;
+            padding-top: 0;
+        }
+
+
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.85; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .lockr-name {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(to bottom, #00cfff, #0055ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            line-height: 1;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+
+        .enterprise {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 20px;
+            color: #00ff99;
+            margin-left: 8px;
+            line-height: 1;
+            display: inline-block;
+            vertical-align: baseline;
+        }
+
+        .version-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: #ccc;
+            background-color: #222;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: 12px;
+            line-height: 1;
+            align-self: flex-start;
+            margin-top: 2px;
+        }
+
+        .tagline {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1;
+            margin-top: 2px;
+            color: #00ff99;
+            letter-spacing: 1px;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-welcome {
+            color: #ccc;
+            font-size: 14px;
+        }
+
+        /* Sidebar Logo Styles */
+        .sidebar-logo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            padding: 20px 0;
+        }
+
+        .sidebar-lock-icon {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .sidebar-lock-icon svg {
+            animation: sidebarPulse 3s infinite;
+            transition: all 0.3s ease;
+            filter: drop-shadow(0 0 8px rgba(0, 255, 153, 0.2));
+        }
+
+        .sidebar-lock-icon:hover svg {
+            transform: scale(1.1);
+            filter: drop-shadow(0 0 12px rgba(0, 255, 153, 0.4));
+        }
+
+        @keyframes sidebarPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .sidebar-brand {
+            text-align: center;
+        }
+
+        .sidebar-lockr {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            font-weight: bold;
+            color: #00cfff;
+            text-shadow: 0 0 8px rgba(0, 207, 255, 0.5);
+            margin-bottom: 2px;
+        }
+
+        .sidebar-enterprise {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: #00ff99;
+            text-shadow: 0 0 6px rgba(0, 255, 153, 0.5);
+            letter-spacing: 1px;
+        }
+
         .navbar {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
@@ -136,6 +301,11 @@
         .stat-card {
             background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
             color: white;
+        }
+
+        .degraded-servers-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
         }
         
         .server-card {
@@ -319,32 +489,54 @@
     </style>
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-dark">
-        <div class="container-fluid">
-            <a class="navbar-brand" href="#" onclick="showDashboardOverview()">
-                <img src="/static/images/lockr_logo.svg" alt="Lockr Enterprise" style="height: 40px; width: auto; margin-right: 10px;">
-            </a>
-            <div class="navbar-nav ms-auto">
-                <span class="navbar-text me-3">
-                    <i class="fas fa-user me-1"></i>
-                    Welcome, {{ session.username }}
-                </span>
-                <button class="btn theme-toggle me-3" onclick="toggleTheme()" data-bs-theme="light">
-                    <i class="fas fa-sun"></i>
-                    <span class="theme-text">Light</span>
-                </button>
-                <button class="btn btn-outline-warning me-3" onclick="showChangePasswordModal()">
-                    <i class="fas fa-key me-1"></i>
-                    Change Password
-                </button>
-                <a class="nav-link" href="/logout">
-                    <i class="fas fa-sign-out-alt me-1"></i>
-                    Logout
-                </a>
+    <!-- Lockr Enterprise Header -->
+    <div class="lockr-header">
+        <div class="lockr-logo">
+            <div class="lock-icon" title="$ lockr --enterprise" onclick="showDashboardOverview()">
+                <svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Shield body -->
+                    <path d="M30 15 L50 22 L50 45 Q50 55 30 60 Q10 55 10 45 L10 22 Z" 
+                          fill="#2c2c2c" stroke="#00ff99" stroke-width="2"/>
+                    
+                    <!-- Shield highlight -->
+                    <path d="M30 15 L50 22 L50 45 Q50 55 30 60 Q10 55 10 45 L10 22 Z" 
+                          fill="none" stroke="#00ff99" stroke-width="1" opacity="0.3"/>
+                    
+                    <!-- Command prompt symbol -->
+                    <text x="30" y="42" font-family="JetBrains Mono, monospace" font-size="16" 
+                          fill="#00ff99" text-anchor="middle">&gt;_</text>
+                </svg>
+            </div>
+            <div class="lockr-text">
+                <h1>
+                    <span class="lockr-name">Lockr</span>
+                    <span class="enterprise">Enterprise</span>
+                    <span class="version-badge">v0.94</span>
+                </h1>
+                <p class="tagline">AUTOMATE. ENCRYPT. CONTROL.</p>
             </div>
         </div>
-    </nav>
+        
+        <!-- Right side controls -->
+        <div class="header-controls">
+            <span class="user-welcome me-3">
+                <i class="fas fa-user me-1"></i>
+                Welcome, {{ session.username }}
+            </span>
+            <button class="btn theme-toggle me-3" onclick="toggleTheme()" data-bs-theme="light">
+                <i class="fas fa-sun"></i>
+                <span class="theme-text">Light</span>
+            </button>
+            <button class="btn btn-outline-warning me-3" onclick="showChangePasswordModal()">
+                <i class="fas fa-key me-1"></i>
+                Change Password
+            </button>
+            <a class="nav-link" href="/logout">
+                <i class="fas fa-sign-out-alt me-1"></i>
+                Logout
+            </a>
+        </div>
+    </div>
 
     <div class="container-fluid">
         <div class="row">
@@ -352,9 +544,29 @@
             <nav class="col-md-3 col-lg-2 d-md-block sidebar">
                 <div class="position-sticky pt-3">
                     <!-- Sidebar Logo -->
-                    <div class="text-center mb-4">
-                        <img src="/static/images/lockr_logo.svg" alt="Lockr Enterprise" style="max-width: 120px; height: auto; filter: brightness(0) invert(1);">
-                    </div>
+                            <div class="text-center mb-4">
+            <div class="sidebar-logo">
+                <div class="sidebar-lock-icon">
+                    <svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Shield body -->
+                        <path d="M25 12 L42 18 L42 37 Q42 46 25 50 Q8 46 8 37 L8 18 Z" 
+                              fill="#2c2c2c" stroke="#00ff99" stroke-width="2"/>
+                        
+                        <!-- Shield highlight -->
+                        <path d="M25 12 L42 18 L42 37 Q42 46 25 50 Q8 46 8 37 L8 18 Z" 
+                              fill="none" stroke="#00ff99" stroke-width="1" opacity="0.3"/>
+                        
+                        <!-- Command prompt symbol -->
+                        <text x="25" y="35" font-family="JetBrains Mono, monospace" font-size="14" 
+                              fill="#00ff99" text-anchor="middle">&gt;_</text>
+                    </svg>
+                </div>
+                <div class="sidebar-brand">
+                    <div class="sidebar-lockr">Lockr</div>
+                    <div class="sidebar-enterprise">Enterprise</div>
+                </div>
+            </div>
+        </div>
                     
                     <ul class="nav flex-column">
                         <li class="nav-item">
@@ -966,7 +1178,7 @@
                     </div>
                     
                     <div class="col-xl-3 col-md-6 mb-4">
-                        <div class="card stat-card">
+                        <div class="card stat-card degraded-servers-card" style="cursor: pointer;" onclick="showDegradedServersDetails()">
                             <div class="card-body">
                                 <div class="row no-gutters align-items-center">
                                     <div class="col mr-2">
@@ -974,6 +1186,7 @@
                                             Degraded Servers
                                         </div>
                                         <div class="h5 mb-0 font-weight-bold text-warning">{{ degraded_servers }}</div>
+                                        <small class="text-muted">Click to see details</small>
                                     </div>
                                     <div class="col-auto">
                                         <i class="fas fa-exclamation-circle fa-2x text-warning"></i>
@@ -1482,6 +1695,38 @@
                     <button type="button" class="btn btn-info" onclick="addNewServer()" id="addServerBtn">
                         <i class="fas fa-plus me-1"></i>
                         Add Server
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Degraded Servers Modal -->
+    <div class="modal fade" id="degradedServersModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Degraded Servers - Health Check Details
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="degradedServersContent">
+                        <div class="text-center">
+                            <div class="spinner-border text-warning" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                            <p class="mt-2">Loading server health details...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-warning" onclick="runHealthCheckAll()">
+                        <i class="fas fa-sync me-1"></i>
+                        Re-run Health Check
                     </button>
                 </div>
             </div>
@@ -2128,6 +2373,16 @@
             
             // Load server statistics
             loadServerStatistics();
+        }
+
+        // Show degraded servers details
+        function showDegradedServersDetails() {
+            // Show the modal
+            const modal = new bootstrap.Modal(document.getElementById('degradedServersModal'));
+            modal.show();
+            
+            // Load the degraded servers details
+            loadDegradedServersDetails();
         }
         
         // Show add account section
@@ -3033,6 +3288,101 @@
                 }
             });
         }
+
+        // Global variable to store degraded servers for targeted health checks
+        let currentDegradedServers = [];
+
+        // Load degraded servers details
+        function loadDegradedServersDetails() {
+            fetch('/api/health_check_all', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({})
+            })
+            .then(response => response.json())
+            .then(data => {
+                const content = document.getElementById('degradedServersContent');
+                
+                if (data.success) {
+                    const degradedServers = data.health_results.filter(result => 
+                        result.overall_status === 'degraded' || result.overall_status === 'unhealthy'
+                    );
+                    
+                    // Store degraded servers globally for targeted health checks
+                    currentDegradedServers = degradedServers;
+                    
+                    if (degradedServers.length === 0) {
+                        content.innerHTML = `
+                            <div class="alert alert-success">
+                                <i class="fas fa-check-circle me-2"></i>
+                                No degraded servers found! All servers are healthy.
+                            </div>
+                        `;
+                        return;
+                    }
+                    
+                    let html = '<div class="row">';
+                    degradedServers.forEach(server => {
+                        const statusClass = server.status === 'offline' ? 'danger' : 'warning';
+                        const statusIcon = server.status === 'offline' ? 'times-circle' : 'exclamation-triangle';
+                        
+                        html += `
+                            <div class="col-12 mb-3">
+                                <div class="card border-${statusClass}">
+                                    <div class="card-header bg-${statusClass} text-white">
+                                        <h6 class="mb-0">
+                                            <i class="fas fa-${statusIcon} me-2"></i>
+                                            ${server.server} (${server.ip})
+                                        </h6>
+                                    </div>
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <h6>Health Check Results:</h6>
+                                                <ul class="list-unstyled">
+                                                    <li><i class="fas fa-${server.ping ? 'check text-success' : 'times text-danger'} me-2"></i>Ping: ${server.ping ? 'Success' : 'Failed'}</li>
+                                                    <li><i class="fas fa-${server.ssh_port ? 'check text-success' : 'times text-danger'} me-2"></i>SSH Port: ${server.ssh_port ? 'Open' : 'Closed'}</li>
+                                                    <li><i class="fas fa-${server.ssh_auth ? 'check text-success' : 'times text-danger'} me-2"></i>SSH Auth: ${server.ssh_auth ? 'Success' : 'Failed'}</li>
+                                                    <li><i class="fas fa-${server.system_resources ? 'check text-success' : 'times text-danger'} me-2"></i>System Resources: ${server.system_resources ? 'OK' : 'Issues'}</li>
+                                                </ul>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <h6>Issues Found:</h6>
+                                                <div class="alert alert-${statusClass}">
+                                                    ${server.issues && server.issues.length > 0 ? 
+                                                        server.issues.map(issue => `<div>• ${issue}</div>`).join('') : 
+                                                        'No specific issues identified'
+                                                    }
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                    });
+                    html += '</div>';
+                    content.innerHTML = html;
+                } else {
+                    content.innerHTML = `
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            Failed to load server health details: ${data.message || 'Unknown error'}
+                        </div>
+                    `;
+                }
+            })
+            .catch(error => {
+                document.getElementById('degradedServersContent').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        Error loading server health details: ${error.message}
+                    </div>
+                `;
+            });
+        }
         
         // Show add server form
         function showAddServerForm() {
@@ -3223,6 +3573,75 @@
                     </div>
                 `);
             }
+        }
+        
+        // Re-run health check for degraded servers only (called from modal button)
+        function runHealthCheckAll() {
+            if (currentDegradedServers.length === 0) {
+                alert('No degraded servers to check!');
+                return;
+            }
+            
+            // Close the modal first
+            const modal = bootstrap.Modal.getInstance(document.getElementById('healthCheckModal'));
+            if (modal) {
+                modal.hide();
+            }
+            
+            // Show loading state
+            showResult('Targeted Health Check', `
+                <div class="alert alert-info">
+                    <strong>Running health check on ${currentDegradedServers.length} degraded server(s)...</strong><br>
+                    <div class="spinner-border spinner-border-sm me-2" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    Checking: ${currentDegradedServers.map(s => s.server).join(', ')}
+                </div>
+            `);
+            
+            // Run targeted health check on degraded servers only
+            fetch('/api/health_check_targeted', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    servers: currentDegradedServers.map(server => ({
+                        ip: server.ip,
+                        server: server.server
+                    }))
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Update server counts
+                    updateServerCounts(data.summary);
+                    
+                    // Show health check results
+                    showHealthCheckResults(data.health_results);
+                    
+                    // Refresh the page to show updated statuses
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                } else {
+                    showResult('Health Check Failed', `
+                        <div class="alert alert-danger">
+                            <strong>Health check failed:</strong><br>
+                            ${data.error || 'Unknown error occurred'}
+                        </div>
+                    `);
+                }
+            })
+            .catch(error => {
+                showResult('Health Check Error', `
+                    <div class="alert alert-danger">
+                        <strong>Network error:</strong><br>
+                        ${error.message}
+                    </div>
+                `);
+            });
         }
         
         // Bulk health check for all servers
