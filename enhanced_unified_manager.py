@@ -77,58 +77,64 @@ def save_servers(servers):
         return False
 
 def perform_health_check(server_ip, server_name):
-    """Perform comprehensive health check on a server"""
+    """Perform comprehensive health check on a server with detailed diagnostics"""
     health_results = {
         "server": server_name,
         "ip": server_ip,
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "overall_status": "unknown",
-        "checks": {}
+        "checks": {},
+        "troubleshooting": []
     }
     
     try:
         # 1. Basic Connectivity Check
-        connectivity_result = test_connectivity(server_ip, timeout=5)
-        health_results["checks"]["connectivity"] = {
-            "status": "online" if connectivity_result else "offline",
-            "details": "Ping test successful" if connectivity_result else "Ping test failed"
-        }
+        connectivity_result = test_connectivity_detailed(server_ip, timeout=5)
+        health_results["checks"]["connectivity"] = connectivity_result
         
         # 2. SSH Port Check
-        ssh_result = test_ssh_port(server_ip, 22, timeout=5)
-        health_results["checks"]["ssh_port"] = {
-            "status": "open" if ssh_result else "closed",
-            "details": "SSH port 22 is accessible" if ssh_result else "SSH port 22 is not accessible"
-        }
+        ssh_result = test_ssh_port_detailed(server_ip, 22, timeout=5)
+        health_results["checks"]["ssh_port"] = ssh_result
         
         # 3. SSH Authentication Check (if we have SSH keys)
-        ssh_auth_result = test_ssh_authentication(server_ip)
-        health_results["checks"]["ssh_auth"] = {
-            "status": "authenticated" if ssh_auth_result else "not_authenticated",
-            "details": "SSH key authentication successful" if ssh_auth_result else "SSH key authentication failed"
-        }
+        ssh_auth_result = test_ssh_authentication_detailed(server_ip)
+        health_results["checks"]["ssh_auth"] = ssh_auth_result
         
         # 4. System Resource Check (if SSH is available)
-        if ssh_auth_result:
-            system_resources = check_system_resources(server_ip)
+        if ssh_auth_result["status"] == "authenticated":
+            system_resources = check_system_resources_detailed(server_ip)
             health_results["checks"]["system_resources"] = system_resources
         else:
             health_results["checks"]["system_resources"] = {
                 "status": "unknown",
-                "details": "Cannot check system resources without SSH access"
+                "details": "Cannot check system resources without SSH access",
+                "troubleshooting": ["Fix SSH authentication first to enable system resource monitoring"]
             }
         
-        # Determine overall status
-        online_checks = sum(1 for check in health_results["checks"].values() 
-                           if check["status"] in ["online", "open", "authenticated", "healthy"])
-        total_checks = len(health_results["checks"])
+        # Generate troubleshooting recommendations
+        health_results["troubleshooting"] = generate_troubleshooting_recommendations(health_results["checks"])
         
-        if online_checks == total_checks:
-            health_results["overall_status"] = "healthy"
-        elif online_checks > total_checks / 2:
-            health_results["overall_status"] = "degraded"
-        else:
+        # Determine overall status - prioritize connectivity over system resources
+        connectivity_status = health_results["checks"].get("connectivity", {}).get("status")
+        ssh_port_status = health_results["checks"].get("ssh_port", {}).get("status")
+        ssh_auth_status = health_results["checks"].get("ssh_auth", {}).get("status")
+        system_resources_status = health_results["checks"].get("system_resources", {}).get("status")
+        
+        # Critical connectivity checks
+        if connectivity_status == "offline":
             health_results["overall_status"] = "unhealthy"
+        elif ssh_port_status == "closed":
+            health_results["overall_status"] = "unhealthy"
+        elif ssh_auth_status in ["auth_failed", "no_key"]:
+            health_results["overall_status"] = "degraded"
+        elif system_resources_status == "issues":
+            # System resource issues are less critical - only mark as degraded if other issues exist
+            if connectivity_status == "online" and ssh_port_status == "open" and ssh_auth_status == "authenticated":
+                health_results["overall_status"] = "degraded"
+            else:
+                health_results["overall_status"] = "degraded"
+        else:
+            health_results["overall_status"] = "healthy"
             
         return health_results
         
@@ -136,7 +142,8 @@ def perform_health_check(server_ip, server_name):
         health_results["overall_status"] = "error"
         health_results["checks"]["error"] = {
             "status": "error",
-            "details": f"Health check failed: {str(e)}"
+            "details": f"Health check failed: {str(e)}",
+            "troubleshooting": ["Check if the server IP address is correct", "Verify network connectivity to the server"]
         }
         return health_results
 
@@ -290,6 +297,317 @@ def test_connectivity_socket(host, timeout=5):
     except Exception as e:
         print(f"Socket test error for {host}: {e}")
         return {"ping": False, "error": f"Socket test error: {str(e)}"}
+
+def test_connectivity_detailed(host, timeout=5):
+    """Test basic connectivity with detailed diagnostics"""
+    try:
+        # Try ping first
+        ping_locations = ['/usr/bin/ping', '/bin/ping', 'ping']
+        ping_cmd = None
+        
+        for location in ping_locations:
+            if os.path.exists(location) or location == 'ping':
+                ping_cmd = location
+                break
+        
+        if ping_cmd:
+            try:
+                result = subprocess.run([ping_cmd, '-c', '1', '-W', str(timeout), host], 
+                                      capture_output=True, text=True, timeout=timeout+2)
+                if result.returncode == 0:
+                    return {
+                        "status": "online",
+                        "details": f"Ping successful to {host}",
+                        "method": "ping",
+                        "troubleshooting": []
+                    }
+                else:
+                    # Try socket fallback
+                    socket_result = test_connectivity_socket(host, timeout)
+                    if socket_result["ping"]:
+                        return {
+                            "status": "online",
+                            "details": f"Connectivity successful via {socket_result['method']} (ping failed but port accessible)",
+                            "method": socket_result["method"],
+                            "troubleshooting": ["Ping failed but port connectivity works - server may have ICMP disabled"]
+                        }
+                    else:
+                        return {
+                            "status": "offline",
+                            "details": f"Ping failed (return code: {result.returncode}): {result.stderr.strip() or result.stdout.strip() or 'No response'}",
+                            "method": "ping",
+                            "troubleshooting": [
+                                "Check if the server IP address is correct",
+                                "Verify the server is powered on and connected to the network",
+                                "Check firewall settings - server may be blocking ICMP packets",
+                                "Try connecting from another machine to isolate network issues",
+                                "Check if the server is behind a NAT/firewall that blocks ping"
+                            ]
+                        }
+            except subprocess.TimeoutExpired:
+                return {
+                    "status": "offline",
+                    "details": f"Ping timeout after {timeout} seconds",
+                    "method": "ping",
+                    "troubleshooting": [
+                        "Server may be overloaded or unresponsive",
+                        "Check network latency and connectivity",
+                        "Verify the server is not in sleep/hibernation mode",
+                        "Check if the server IP address is correct"
+                    ]
+                }
+        else:
+            # Fallback to socket test
+            socket_result = test_connectivity_socket(host, timeout)
+            if socket_result["ping"]:
+                return {
+                    "status": "online",
+                    "details": f"Connectivity successful via {socket_result['method']}",
+                    "method": socket_result["method"],
+                    "troubleshooting": []
+                }
+            else:
+                return {
+                    "status": "offline",
+                    "details": f"Socket connectivity failed: {socket_result['error']}",
+                    "method": "socket",
+                    "troubleshooting": [
+                        "Check if the server IP address is correct",
+                        "Verify the server is powered on and connected to the network",
+                        "Check if SSH service is running on the server",
+                        "Verify network routing and firewall settings"
+                    ]
+                }
+    except Exception as e:
+        return {
+            "status": "error",
+            "details": f"Connectivity test failed: {str(e)}",
+            "method": "unknown",
+            "troubleshooting": [
+                "Check if the server IP address is correct",
+                "Verify network connectivity to the server",
+                "Check system resources on the Lockr server"
+            ]
+        }
+
+def test_ssh_port_detailed(host, port, timeout=5):
+    """Test SSH port with detailed diagnostics"""
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(timeout)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        
+        if result == 0:
+            return {
+                "status": "open",
+                "details": f"SSH port {port} is accessible",
+                "troubleshooting": []
+            }
+        else:
+            return {
+                "status": "closed",
+                "details": f"SSH port {port} is not accessible (error code: {result})",
+                "troubleshooting": [
+                    "Check if SSH service is running on the server: sudo systemctl status ssh",
+                    "Verify SSH is listening on port 22: sudo netstat -tlnp | grep :22",
+                    "Check firewall settings: sudo ufw status or sudo iptables -L",
+                    "Ensure SSH service is enabled: sudo systemctl enable ssh",
+                    "Check if SSH is configured to listen on the correct interface",
+                    "Verify the server is not behind a NAT that blocks port 22"
+                ]
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "details": f"SSH port test failed: {str(e)}",
+            "troubleshooting": [
+                "Check if the server IP address is correct",
+                "Verify network connectivity to the server",
+                "Check if SSH service is running on the server"
+            ]
+        }
+
+def test_ssh_authentication_detailed(host):
+    """Test SSH authentication with detailed diagnostics"""
+    try:
+        if not os.path.exists(SSH_KEY_PATH):
+            return {
+                "status": "no_key",
+                "details": f"SSH key not found at {SSH_KEY_PATH}",
+                "troubleshooting": [
+                    "Generate SSH key pair: ssh-keygen -t ed25519 -f ~/.ssh/lockr_key",
+                    "Copy public key to server: ssh-copy-id -i ~/.ssh/lockr_key.pub user@server",
+                    "Verify SSH key permissions: chmod 600 ~/.ssh/lockr_key",
+                    "Check if SSH key path is correct in Lockr configuration"
+                ]
+            }
+            
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        try:
+            private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+            ssh.connect(host, username=SSH_USER, pkey=private_key, timeout=10)
+            ssh.close()
+            return {
+                "status": "authenticated",
+                "details": f"SSH key authentication successful as {SSH_USER}",
+                "troubleshooting": []
+            }
+        except paramiko.AuthenticationException as e:
+            return {
+                "status": "auth_failed",
+                "details": f"SSH authentication failed: {str(e)}",
+                "troubleshooting": [
+                    "Verify the public key is installed on the server: ssh-copy-id -i ~/.ssh/lockr_key.pub user@server",
+                    "Check if the correct user account is configured in Lockr",
+                    "Verify SSH key permissions: chmod 600 ~/.ssh/lockr_key",
+                    "Check server's authorized_keys file: ~/.ssh/authorized_keys",
+                    "Ensure the public key matches the private key being used",
+                    "Try manual SSH connection: ssh -i ~/.ssh/lockr_key user@server"
+                ]
+            }
+        except paramiko.SSHException as e:
+            return {
+                "status": "ssh_error",
+                "details": f"SSH connection error: {str(e)}",
+                "troubleshooting": [
+                    "Check if SSH service is running on the server",
+                    "Verify SSH configuration allows key authentication",
+                    "Check server logs: sudo journalctl -u ssh",
+                    "Ensure the server is not blocking SSH connections"
+                ]
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "details": f"SSH authentication test failed: {str(e)}",
+                "troubleshooting": [
+                    "Check if the server IP address is correct",
+                    "Verify network connectivity to the server",
+                    "Check SSH service status on the server"
+                ]
+            }
+    except Exception as e:
+        return {
+            "status": "error",
+            "details": f"SSH authentication test failed: {str(e)}",
+            "troubleshooting": [
+                "Check if the server IP address is correct",
+                "Verify network connectivity to the server",
+                "Check SSH service status on the server"
+            ]
+        }
+
+def check_system_resources_detailed(host):
+    """Check system resources with detailed diagnostics"""
+    try:
+        ssh = paramiko.SSHClient()
+        ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+        
+        private_key = paramiko.Ed25519Key.from_private_key_file(SSH_KEY_PATH)
+        ssh.connect(host, username=SSH_USER, pkey=private_key, timeout=10)
+        
+        issues = []
+        details = []
+        
+        # Check CPU load (more lenient threshold)
+        try:
+            stdin, stdout, stderr = ssh.exec_command("uptime | awk '{print $10}' | sed 's/,//'", timeout=10)
+            cpu_load = stdout.read().decode().strip()
+            if cpu_load and float(cpu_load) > 4.0:  # Increased threshold from 2.0 to 4.0
+                issues.append(f"Very high CPU load: {cpu_load}")
+            details.append(f"CPU Load: {cpu_load}")
+        except:
+            details.append("CPU Load: Unable to check")
+        
+        # Check memory usage (more lenient threshold)
+        try:
+            stdin, stdout, stderr = ssh.exec_command("free -m | awk 'NR==2{printf \"%.1f%%\", $3*100/$2}'", timeout=10)
+            memory_usage = stdout.read().decode().strip()
+            if memory_usage and float(memory_usage.replace('%', '')) > 95:  # Increased threshold from 90% to 95%
+                issues.append(f"Very high memory usage: {memory_usage}")
+            details.append(f"Memory Usage: {memory_usage}")
+        except:
+            details.append("Memory Usage: Unable to check")
+        
+        # Check disk usage (more lenient threshold)
+        try:
+            stdin, stdout, stderr = ssh.exec_command("df -h / | awk 'NR==2{print $5}'", timeout=10)
+            disk_usage = stdout.read().decode().strip()
+            if disk_usage and float(disk_usage.replace('%', '')) > 95:  # Increased threshold from 90% to 95%
+                issues.append(f"Very high disk usage: {disk_usage}")
+            details.append(f"Disk Usage: {disk_usage}")
+        except:
+            details.append("Disk Usage: Unable to check")
+        
+        # Check system uptime
+        try:
+            stdin, stdout, stderr = ssh.exec_command("uptime -p", timeout=10)
+            uptime = stdout.read().decode().strip()
+            details.append(f"Uptime: {uptime}")
+        except:
+            details.append("Uptime: Unable to check")
+        
+        ssh.close()
+        
+        if issues:
+            return {
+                "status": "issues",
+                "details": "; ".join(details),
+                "issues": issues,
+                "troubleshooting": [
+                    "Check running processes: top or htop",
+                    "Monitor system resources: watch -n 1 'free -h && df -h'",
+                    "Check system logs: sudo journalctl -f",
+                    "Consider restarting services or the server if issues persist",
+                    "Check for runaway processes consuming resources"
+                ]
+            }
+        else:
+            return {
+                "status": "healthy",
+                "details": "; ".join(details),
+                "troubleshooting": []
+            }
+            
+    except Exception as e:
+        return {
+            "status": "error",
+            "details": f"System resource check failed: {str(e)}",
+            "troubleshooting": [
+                "Check if SSH authentication is working",
+                "Verify the server is responsive",
+                "Check system logs on the server"
+            ]
+        }
+
+def generate_troubleshooting_recommendations(checks):
+    """Generate overall troubleshooting recommendations based on check results"""
+    recommendations = []
+    
+    # Connectivity issues
+    if checks.get("connectivity", {}).get("status") == "offline":
+        recommendations.append("🔴 CRITICAL: Server is not reachable - check network connectivity and server power")
+    
+    # SSH port issues
+    if checks.get("ssh_port", {}).get("status") == "closed":
+        recommendations.append("🟡 SSH service not accessible - check if SSH is running and firewall settings")
+    
+    # SSH auth issues
+    if checks.get("ssh_auth", {}).get("status") in ["auth_failed", "no_key"]:
+        recommendations.append("🟡 SSH authentication failed - verify SSH keys and user configuration")
+    
+    # System resource issues (less critical)
+    if checks.get("system_resources", {}).get("status") == "issues":
+        recommendations.append("🟡 System resource issues detected - monitor but not critical for basic functionality")
+    
+    # Priority order
+    if not recommendations:
+        recommendations.append("✅ All systems appear to be functioning normally")
+    
+    return recommendations
 
 def try_alternative_server_setup(ip_address, hostname):
     """Try to set up SSH access directly from Lockr using alternative methods"""

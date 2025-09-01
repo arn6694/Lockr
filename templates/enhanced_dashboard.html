@@ -908,11 +908,43 @@
                                         <div class="accordion" id="releaseNotes">
                                             <div class="accordion-item">
                                                 <h2 class="accordion-header">
-                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v094">
+                                                    <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#v095">
                                                         Version 0.95 - Current Release
                                                     </button>
                                                 </h2>
-                                                <div id="v094" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                <div id="v095" class="accordion-collapse collapse show" data-bs-parent="#releaseNotes">
+                                                    <div class="accordion-body">
+                                                        <strong>New Features:</strong>
+                                                        <ul>
+                                                            <li>Targeted Health Check System for degraded servers only</li>
+                                                            <li>Enhanced Health Check Modal with detailed diagnostics</li>
+                                                            <li>New API endpoint for targeted server health checks</li>
+                                                            <li>Improved troubleshooting guidance and error messages</li>
+                                                        </ul>
+                                                        <strong>Technical Improvements:</strong>
+                                                        <ul>
+                                                            <li>Optimized health check performance - only checks problematic servers</li>
+                                                            <li>Better error handling with specific diagnostic details</li>
+                                                            <li>More realistic system resource thresholds (CPU: 4.0, Memory/Disk: 95%)</li>
+                                                            <li>Connectivity-focused health status logic</li>
+                                                        </ul>
+                                                        <strong>Fixed:</strong>
+                                                        <ul>
+                                                            <li>Health check modal loading errors and API method mismatches</li>
+                                                            <li>Re-run health check button now targets only degraded servers</li>
+                                                            <li>Response structure consistency in frontend code</li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            
+                                            <div class="accordion-item">
+                                                <h2 class="accordion-header">
+                                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#v094">
+                                                        Version 0.94 - Health Check System
+                                                    </button>
+                                                </h2>
+                                                <div id="v094" class="accordion-collapse collapse" data-bs-parent="#releaseNotes">
                                                     <div class="accordion-body">
                                                         <strong>New Features:</strong>
                                                         <ul>
@@ -927,6 +959,12 @@
                                                             <li>System resource monitoring (CPU, memory, disk usage)</li>
                                                             <li>Automatic server status validation on dashboard load</li>
                                                             <li>Health check API endpoints for individual and bulk operations</li>
+                                                        </ul>
+                                                        <strong>Fixed:</strong>
+                                                        <ul>
+                                                            <li>Server count accuracy - online servers count reflects actual connectivity</li>
+                                                            <li>Status icon colors - online servers icon is green, offline servers are red</li>
+                                                            <li>Health check button functionality - previously placeholder, now fully functional</li>
                                                         </ul>
                                                     </div>
                                                 </div>
@@ -1077,7 +1115,7 @@
                                                 <tbody>
                                                     <tr>
                                                         <td><span class="badge bg-primary">0.95</span></td>
-                                                        <td>2025-01-27</td>
+                                                        <td>2025-09-01</td>
                                                         <td>Enhanced health check system with targeted server checks</td>
                                                         <td><span class="badge bg-success">Current</span></td>
                                                     </tr>
@@ -1134,7 +1172,7 @@
                                         <div class="h5 mb-0 font-weight-bold">{{ total_servers }}</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-server fa-2x text-white-50"></i>
+                                        <i class="fas fa-server fa-2x text-primary"></i>
                                     </div>
                                 </div>
                             </div>
@@ -1207,7 +1245,7 @@
                                         <div class="h5 mb-0 font-weight-bold" id="passwordCount">-</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-lock fa-2x text-white-50"></i>
+                                        <i class="fas fa-key fa-2x text-warning"></i>
                                     </div>
                                 </div>
                             </div>
@@ -1225,7 +1263,7 @@
                                         <div class="h6 mb-0 font-weight-bold" id="lastUpdateTime">Loading...</div>
                                     </div>
                                     <div class="col-auto">
-                                        <i class="fas fa-clock fa-2x text-white-50"></i>
+                                        <i class="fas fa-history fa-2x text-info"></i>
                                     </div>
                                 </div>
                             </div>
@@ -1295,27 +1333,31 @@
                                 <!-- Server Statistics -->
                                 <div class="row mb-4">
                                     <div class="col-md-3">
-                                        <div class="text-center p-3 border rounded">
-                                            <h4 class="text-primary" id="totalServersCount">{{ total_servers }}</h4>
-                                            <small class="text-muted">Total Servers</small>
+                                        <div class="text-center p-3 border border-secondary rounded bg-dark">
+                                            <i class="fas fa-server text-info mb-2" style="font-size: 1.5rem;"></i>
+                                            <h4 class="text-info mb-1" id="totalServersCount">{{ total_servers }}</h4>
+                                            <small class="text-light fw-bold">Total Servers</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="text-center p-3 border rounded">
-                                            <h4 class="text-success" id="onlineServersCount">{{ online_servers }}</h4>
-                                            <small class="text-muted">Online Servers</small>
+                                        <div class="text-center p-3 border border-secondary rounded bg-dark">
+                                            <i class="fas fa-check-circle text-success mb-2" style="font-size: 1.5rem;"></i>
+                                            <h4 class="text-success mb-1" id="onlineServersCount">{{ online_servers }}</h4>
+                                            <small class="text-light fw-bold">Online Servers</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="text-center p-3 border rounded">
-                                            <h4 class="text-warning" id="pendingServersCount">0</h4>
-                                            <small class="text-muted">Pending Setup</small>
+                                        <div class="text-center p-3 border border-secondary rounded bg-dark">
+                                            <i class="fas fa-clock text-warning mb-2" style="font-size: 1.5rem;"></i>
+                                            <h4 class="text-warning mb-1" id="pendingServersCount">0</h4>
+                                            <small class="text-light fw-bold">Pending Setup</small>
                                         </div>
                                     </div>
                                     <div class="col-md-3">
-                                        <div class="text-center p-3 border rounded">
-                                            <h4 class="text-info" id="managedPasswordsCount">0</h4>
-                                            <small class="text-muted">Managed Passwords</small>
+                                        <div class="text-center p-3 border border-secondary rounded bg-dark">
+                                            <i class="fas fa-key text-info mb-2" style="font-size: 1.5rem;"></i>
+                                            <h4 class="text-info mb-1" id="managedPasswordsCount">0</h4>
+                                            <small class="text-light fw-bold">Managed Passwords</small>
                                         </div>
                                     </div>
                                 </div>
@@ -1359,7 +1401,7 @@
                                 <!-- Server List -->
                                 <div class="table-responsive">
                                     <table class="table table-hover">
-                                        <thead class="table-light">
+                                        <thead class="table-dark">
                                             <tr>
                                                 <th>Server Name</th>
                                                 <th>IP Address</th>
@@ -3325,8 +3367,18 @@
                     
                     let html = '<div class="row">';
                     degradedServers.forEach(server => {
-                        const statusClass = server.status === 'offline' ? 'danger' : 'warning';
-                        const statusIcon = server.status === 'offline' ? 'times-circle' : 'exclamation-triangle';
+                        const statusClass = server.overall_status === 'unhealthy' ? 'danger' : 'warning';
+                        const statusIcon = server.overall_status === 'unhealthy' ? 'times-circle' : 'exclamation-triangle';
+                        
+                        // Get check results
+                        const checks = server.checks || {};
+                        const connectivity = checks.connectivity || {};
+                        const sshPort = checks.ssh_port || {};
+                        const sshAuth = checks.ssh_auth || {};
+                        const systemResources = checks.system_resources || {};
+                        
+                        // Get troubleshooting recommendations
+                        const troubleshooting = server.troubleshooting || [];
                         
                         html += `
                             <div class="col-12 mb-3">
@@ -3335,27 +3387,72 @@
                                         <h6 class="mb-0">
                                             <i class="fas fa-${statusIcon} me-2"></i>
                                             ${server.server} (${server.ip})
+                                            <small class="float-end">${server.timestamp}</small>
                                         </h6>
                                     </div>
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col-md-6">
-                                                <h6>Health Check Results:</h6>
+                                                <h6><i class="fas fa-stethoscope me-2"></i>Health Check Results:</h6>
                                                 <ul class="list-unstyled">
-                                                    <li><i class="fas fa-${server.ping ? 'check text-success' : 'times text-danger'} me-2"></i>Ping: ${server.ping ? 'Success' : 'Failed'}</li>
-                                                    <li><i class="fas fa-${server.ssh_port ? 'check text-success' : 'times text-danger'} me-2"></i>SSH Port: ${server.ssh_port ? 'Open' : 'Closed'}</li>
-                                                    <li><i class="fas fa-${server.ssh_auth ? 'check text-success' : 'times text-danger'} me-2"></i>SSH Auth: ${server.ssh_auth ? 'Success' : 'Failed'}</li>
-                                                    <li><i class="fas fa-${server.system_resources ? 'check text-success' : 'times text-danger'} me-2"></i>System Resources: ${server.system_resources ? 'OK' : 'Issues'}</li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-${connectivity.status === 'online' ? 'check text-success' : 'times text-danger'} me-2"></i>
+                                                        <strong>Ping:</strong> ${connectivity.status === 'online' ? 'Success' : 'Failed'}
+                                                        <br><small class="text-muted">${connectivity.details || 'No details available'}</small>
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-${sshPort.status === 'open' ? 'check text-success' : 'times text-danger'} me-2"></i>
+                                                        <strong>SSH Port:</strong> ${sshPort.status === 'open' ? 'Open' : 'Closed'}
+                                                        <br><small class="text-muted">${sshPort.details || 'No details available'}</small>
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-${sshAuth.status === 'authenticated' ? 'check text-success' : 'times text-danger'} me-2"></i>
+                                                        <strong>SSH Auth:</strong> ${sshAuth.status === 'authenticated' ? 'Success' : 'Failed'}
+                                                        <br><small class="text-muted">${sshAuth.details || 'No details available'}</small>
+                                                    </li>
+                                                    <li class="mb-2">
+                                                        <i class="fas fa-${systemResources.status === 'healthy' ? 'check text-success' : 'times text-danger'} me-2"></i>
+                                                        <strong>System Resources:</strong> ${systemResources.status === 'healthy' ? 'OK' : 'Issues'}
+                                                        <br><small class="text-muted">${systemResources.details || 'No details available'}</small>
+                                                    </li>
                                                 </ul>
                                             </div>
                                             <div class="col-md-6">
-                                                <h6>Issues Found:</h6>
-                                                <div class="alert alert-${statusClass}">
-                                                    ${server.issues && server.issues.length > 0 ? 
-                                                        server.issues.map(issue => `<div>• ${issue}</div>`).join('') : 
-                                                        'No specific issues identified'
+                                                <h6><i class="fas fa-tools me-2"></i>Troubleshooting Steps:</h6>
+                                                <div class="alert alert-info">
+                                                    ${troubleshooting.length > 0 ? 
+                                                        troubleshooting.map(step => `<div class="mb-1">${step}</div>`).join('') : 
+                                                        'No specific troubleshooting steps available'
                                                     }
                                                 </div>
+                                                
+                                                ${connectivity.troubleshooting && connectivity.troubleshooting.length > 0 ? `
+                                                    <h6 class="mt-3"><i class="fas fa-wifi me-2"></i>Connectivity Issues:</h6>
+                                                    <ul class="list-unstyled small">
+                                                        ${connectivity.troubleshooting.map(step => `<li>• ${step}</li>`).join('')}
+                                                    </ul>
+                                                ` : ''}
+                                                
+                                                ${sshPort.troubleshooting && sshPort.troubleshooting.length > 0 ? `
+                                                    <h6 class="mt-3"><i class="fas fa-terminal me-2"></i>SSH Port Issues:</h6>
+                                                    <ul class="list-unstyled small">
+                                                        ${sshPort.troubleshooting.map(step => `<li>• ${step}</li>`).join('')}
+                                                    </ul>
+                                                ` : ''}
+                                                
+                                                ${sshAuth.troubleshooting && sshAuth.troubleshooting.length > 0 ? `
+                                                    <h6 class="mt-3"><i class="fas fa-key me-2"></i>SSH Auth Issues:</h6>
+                                                    <ul class="list-unstyled small">
+                                                        ${sshAuth.troubleshooting.map(step => `<li>• ${step}</li>`).join('')}
+                                                    </ul>
+                                                ` : ''}
+                                                
+                                                ${systemResources.troubleshooting && systemResources.troubleshooting.length > 0 ? `
+                                                    <h6 class="mt-3"><i class="fas fa-server me-2"></i>System Resource Issues:</h6>
+                                                    <ul class="list-unstyled small">
+                                                        ${systemResources.troubleshooting.map(step => `<li>• ${step}</li>`).join('')}
+                                                    </ul>
+                                                ` : ''}
                                             </div>
                                         </div>
                                     </div>
