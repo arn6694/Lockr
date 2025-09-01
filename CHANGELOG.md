@@ -152,7 +152,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **0.91**: Systemd service integration
 - **0.92**: SSH setup and password management fixes
 - **0.93**: Timestamp tracking system and Last Updated field fixes
-- **0.94**: Current version - Comprehensive health check system and real server status detection
+- **0.95**: Current version - Enhanced health check system with targeted server checks
 - **0.95, 0.96, etc.**: Incremental updates and bug fixes
 - **1.0**: Production release for boss presentation
 - **1.1, 1.2, etc.**: Post-production feature updates
